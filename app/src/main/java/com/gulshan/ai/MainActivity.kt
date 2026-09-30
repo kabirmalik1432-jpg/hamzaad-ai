@@ -112,16 +112,38 @@ class MainActivity : AppCompatActivity() {
 
     private fun executeCommand(command: String) {
 
-        statusText.text = "Command: $command"
+    val cmd = command.trim().lowercase()
 
-        tts.speak(
-            "Aapki command mili: $command",
-            TextToSpeech.QUEUE_FLUSH,
-            null,
-            "gulshan"
-        )
+    statusText.text = "Command: $command"
 
-        // Yahan baad mein Gulshan AI ke real actions connect honge.
+    when {
+        cmd == "hello gulshan" || cmd == "hello" -> {
+            tts.speak(
+                "Hello! Main Gulshan hoon. Command mili.",
+                TextToSpeech.QUEUE_FLUSH,
+                null,
+                "gulshan"
+            )
+        }
+
+        cmd.contains("gulshan") -> {
+            tts.speak(
+                "Ji, command mili: $command",
+                TextToSpeech.QUEUE_FLUSH,
+                null,
+                "gulshan"
+            )
+        }
+
+        else -> {
+            tts.speak(
+                "Command mili: $command. Abhi is command ka action set nahi hai.",
+                TextToSpeech.QUEUE_FLUSH,
+                null,
+                "gulshan"
+            )
+        }
+    }
     }
 
     override fun onDestroy() {
