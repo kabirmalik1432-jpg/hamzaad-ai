@@ -12,6 +12,8 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
@@ -74,7 +76,7 @@ class MainActivity : AppCompatActivity() {
             val command = commandBox.text.toString().trim()
 
             if (command.isEmpty()) {
-                showResult("Pehle command likho.")
+                respond("Pehle command likho.")
             } else {
                 executeCommand(command)
             }
@@ -109,7 +111,7 @@ class MainActivity : AppCompatActivity() {
         try {
             startActivityForResult(intent, 100)
         } catch (e: Exception) {
-            showResult("Voice input available nahi hai.")
+            respond("Voice input available nahi hai.")
         }
     }
 
@@ -150,17 +152,16 @@ class MainActivity : AppCompatActivity() {
 
         statusText.text = "✅ Command mili: $original"
 
-        // -------------------------
-        // GREETING
-        // -------------------------
-
+        // HELLO
         if (
             cmd == "hello" ||
             cmd == "hi" ||
             cmd.contains("hello gulshan") ||
             cmd.contains("hi gulshan") ||
             cmd.contains("हेलो गुलशन") ||
-            cmd.contains("नमस्ते गुलशन")
+            cmd.contains("हेलो") ||
+            cmd.contains("नमस्ते गुलशन") ||
+            cmd.contains("नमस्ते")
         ) {
             respond(
                 "Hello! Main Gulshan hoon. Aapki command mili."
@@ -168,137 +169,302 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        // -------------------------
-        // TIME
-        // -------------------------
-
-        if (
-            cmd.contains("time") ||
-            cmd.contains("samay") ||
-            cmd.contains("समय") ||
-            cmd.contains("टाइम")
-        ) {
-            val time = java.text.SimpleDateFormat(
-                "hh:mm a",
-                Locale.getDefault()
-            ).format(java.util.Date())
-
-            respond("Abhi time hai $time.")
-            return
-        }
-
-        // -------------------------
         // YOUTUBE
-        // -------------------------
-
         if (
             cmd.contains("youtube") ||
             cmd.contains("यूट्यूब")
         ) {
-            openWebsite("https://www.youtube.com")
-            respond("YouTube khol rahi hoon.")
+            openWebsite(
+                "https://www.youtube.com",
+                "YouTube khol rahi hoon."
+            )
             return
         }
 
-        // -------------------------
-        // GOOGLE
-        // -------------------------
-
-        if (
-            cmd.contains("google") ||
-            cmd.contains("गूगल")
-        ) {
-            openWebsite("https://www.google.com")
-            respond("Google khol rahi hoon.")
-            return
-        }
-
-        // -------------------------
         // CHROME
-        // -------------------------
-
         if (
             cmd.contains("chrome") ||
             cmd.contains("क्रोम")
         ) {
-            openApp("com.android.chrome")
+            openChrome()
             return
         }
 
-        // -------------------------
         // CAMERA
-        // -------------------------
-
         if (
             cmd.contains("camera") ||
             cmd.contains("कैमरा")
         ) {
-            try {
-                val cameraIntent =
-                    Intent("android.media.action.IMAGE_CAPTURE")
-
-                startActivity(cameraIntent)
-
-                respond("Camera khol rahi hoon.")
-
-            } catch (e: Exception) {
-                respond("Camera open nahi ho saka.")
-            }
-
+            openCamera()
             return
         }
 
-        // -------------------------
         // SETTINGS
-        // -------------------------
-
         if (
             cmd.contains("setting") ||
             cmd.contains("settings") ||
             cmd.contains("सेटिंग")
         ) {
-            try {
-                startActivity(
-                    Intent(Settings.ACTION_SETTINGS)
+            openSettings()
+            return
+        }
+
+        // GOOGLE SEARCH
+        if (
+            cmd.contains("google search") ||
+            cmd.contains("search google") ||
+            cmd.contains("गूगल पर सर्च") ||
+            cmd.contains("गूगल सर्च")
+        ) {
+            val searchText = extractSearchText(
+                original
+            )
+
+            if (searchText.isNotEmpty()) {
+                googleSearch(searchText)
+            } else {
+                openWebsite(
+                    "https://www.google.com",
+                    "Google khol rahi hoon."
                 )
-
-                respond("Settings khol rahi hoon.")
-
-            } catch (e: Exception) {
-                respond("Settings open nahi ho saka.")
             }
 
             return
         }
 
-        // -------------------------
-        // APP UPDATE REQUEST
-        // -------------------------
-
+        // GOOGLE
         if (
-            cmd.contains("update") ||
-            cmd.contains("अपडेट")
+            cmd.contains("google") ||
+            cmd.contains("गूगल")
         ) {
-            respond(
-                "Update system ke liye remote update service connect karni hogi. " +
-                "Main abhi bina permission ke khud APK install nahi kar sakti."
+            openWebsite(
+                "https://www.google.com",
+                "Google khol rahi hoon."
             )
             return
         }
 
-        // -------------------------
-        // UNKNOWN COMMAND
-        // -------------------------
+        // TIME
+        if (
+            cmd.contains("time") ||
+            cmd.contains("samay") ||
+            cmd.contains("टाइम") ||
+            cmd.contains("समय") ||
+            cmd.contains("कितने बजे")
+        ) {
+            val time = SimpleDateFormat(
+                "hh:mm a",
+                Locale.getDefault()
+            ).format(Date())
 
+            respond("Abhi time hai $time.")
+            return
+        }
+
+        // DATE
+        if (
+            cmd.contains("date") ||
+            cmd.contains("today") ||
+            cmd.contains("tarikh") ||
+            cmd.contains("तारीख") ||
+            cmd.contains("आज की तारीख") ||
+            cmd.contains("आज की डेट")
+        ) {
+            val date = SimpleDateFormat(
+                "dd MMMM yyyy",
+                Locale("hi", "IN")
+            ).format(Date())
+
+            respond("Aaj ki tareekh hai $date.")
+            return
+        }
+
+        // UNKNOWN COMMAND
         respond(
             "Command mili: $original. " +
             "Is command ka action abhi available nahi hai."
         )
     }
 
-    // -------------------------
-    // RESPONSE
-    // -------------------------
+    private fun openChrome() {
+
+        try {
+
+            val chromeIntent =
+                packageManager.getLaunchIntentForPackage(
+                    "com.android.chrome"
+                )
+
+            if (chromeIntent != null) {
+
+                startActivity(chromeIntent)
+
+                speak("Chrome khol rahi hoon.")
+
+                showResult(
+                    "🤖 GULSHAN:\nChrome khol rahi hoon."
+                )
+
+            } else {
+
+                // Chrome package na mile to browser intent
+                val browserIntent = Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse("https://www.google.com")
+                )
+
+                startActivity(browserIntent)
+
+                speak(
+                    "Chrome nahi mila, browser khol rahi hoon."
+                )
+
+                showResult(
+                    "🤖 GULSHAN:\nChrome nahi mila, browser khol rahi hoon."
+                )
+            }
+
+        } catch (e: Exception) {
+
+            respond(
+                "Browser open nahi ho saka."
+            )
+        }
+    }
+
+    private fun openCamera() {
+
+        try {
+
+            val cameraIntent =
+                Intent("android.media.action.IMAGE_CAPTURE")
+
+            startActivity(cameraIntent)
+
+            speak("Camera khol rahi hoon.")
+
+            showResult(
+                "🤖 GULSHAN:\nCamera khol rahi hoon."
+            )
+
+        } catch (e: Exception) {
+
+            respond("Camera open nahi ho saka.")
+        }
+    }
+
+    private fun openSettings() {
+
+        try {
+
+            startActivity(
+                Intent(Settings.ACTION_SETTINGS)
+            )
+
+            speak("Settings khol rahi hoon.")
+
+            showResult(
+                "🤖 GULSHAN:\nSettings khol rahi hoon."
+            )
+
+        } catch (e: Exception) {
+
+            respond("Settings open nahi ho saka.")
+        }
+    }
+
+    private fun googleSearch(searchText: String) {
+
+        try {
+
+            val encodedQuery =
+                Uri.encode(searchText)
+
+            val url =
+                "https://www.google.com/search?q=$encodedQuery"
+
+            startActivity(
+                Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse(url)
+                )
+            )
+
+            speak(
+                "$searchText Google par search kar rahi hoon."
+            )
+
+            showResult(
+                "🤖 GULSHAN:\nGoogle par search: $searchText"
+            )
+
+        } catch (e: Exception) {
+
+            respond(
+                "Google search open nahi ho saka."
+            )
+        }
+    }
+
+    private fun extractSearchText(
+        command: String
+    ): String {
+
+        val lower = command.lowercase(
+            Locale.getDefault()
+        )
+
+        val keywords = listOf(
+            "google search",
+            "search google",
+            "गूगल पर सर्च",
+            "गूगल सर्च"
+        )
+
+        for (keyword in keywords) {
+
+            val index = lower.indexOf(keyword)
+
+            if (index >= 0) {
+
+                return command
+                    .substring(
+                        index + keyword.length
+                    )
+                    .trim()
+            }
+        }
+
+        return ""
+    }
+
+    private fun openWebsite(
+        url: String,
+        message: String
+    ) {
+
+        try {
+
+            startActivity(
+                Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse(url)
+                )
+            )
+
+            speak(message)
+
+            showResult(
+                "🤖 GULSHAN:\n$message"
+            )
+
+        } catch (e: Exception) {
+
+            respond(
+                "Website open nahi ho saki."
+            )
+        }
+    }
 
     private fun respond(message: String) {
 
@@ -319,10 +485,6 @@ class MainActivity : AppCompatActivity() {
         resultText.text = message
     }
 
-    // -------------------------
-    // SPEECH
-    // -------------------------
-
     private fun speak(message: String) {
 
         if (::tts.isInitialized) {
@@ -332,61 +494,6 @@ class MainActivity : AppCompatActivity() {
                 TextToSpeech.QUEUE_FLUSH,
                 null,
                 "gulshan_voice"
-            )
-        }
-    }
-
-    // -------------------------
-    // OPEN WEBSITE
-    // -------------------------
-
-    private fun openWebsite(url: String) {
-
-        try {
-
-            val intent = Intent(
-                Intent.ACTION_VIEW,
-                Uri.parse(url)
-            )
-
-            startActivity(intent)
-
-        } catch (e: Exception) {
-
-            showResult(
-                "Website open nahi ho saki."
-            )
-        }
-    }
-
-    // -------------------------
-    // OPEN APP
-    // -------------------------
-
-    private fun openApp(packageName: String) {
-
-        try {
-
-            val launchIntent =
-                packageManager.getLaunchIntentForPackage(
-                    packageName
-                )
-
-            if (launchIntent != null) {
-
-                startActivity(launchIntent)
-
-            } else {
-
-                respond(
-                    "Ye app phone mein installed nahi hai."
-                )
-            }
-
-        } catch (e: Exception) {
-
-            respond(
-                "App open nahi ho saka."
             )
         }
     }
