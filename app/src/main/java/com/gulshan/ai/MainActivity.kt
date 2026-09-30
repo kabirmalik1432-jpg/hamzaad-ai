@@ -118,17 +118,21 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
 
         layout.addView(title)
-        layout.addView(greeting)
-        layout.addView(commandInput)
-        layout.addView(executeButton)
-        layout.addView(voiceButton)
-        layout.addView(backgroundButton)
-        layout.addView(stopBackgroundButton)
-        layout.addView(historyButton)
-        layout.addView(statusButton)
-        layout.addView(resultText)
-
-        setContentView(layout)
+        private fun normalize(command: String): String {
+    return command
+        .lowercase(Locale.getDefault())
+        .replace("गुलशन जी", "gulshan")
+        .replace("गुलशन", "gulshan")
+        .replace("हेलो", "hello")
+        .replace("हैलो", "hello")
+        .replace(",", " ")
+        .replace(".", " ")
+        .replace("!", " ")
+        .replace("?", " ")
+        .replace("।", " ")
+        .replace(Regex("\\s+"), " ")
+        .trim()
+        }
     }
 
     private fun requestBasicPermissions() {
