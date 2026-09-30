@@ -50,8 +50,8 @@ class MainActivity : AppCompatActivity() {
         commandBox = EditText(this).apply {
             hint = "Command likho..."
             textSize = 18f
-            singleLine = true
-        }
+            
+        }setSingleLine(true)
 
         // Command Button
         val commandButton = Button(this).apply {
