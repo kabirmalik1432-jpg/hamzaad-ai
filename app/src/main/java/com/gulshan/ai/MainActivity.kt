@@ -144,28 +144,37 @@ class MainActivity : AppCompatActivity() {
 
         val cmd = original
             .lowercase(Locale.getDefault())
+            .replace("\\n", " ")
+            .replace("\n", " ")
             .replace(".", "")
             .replace(",", "")
             .replace("!", "")
             .replace("?", "")
+            .replace("-", " ")
+            .replace("_", " ")
+            .replace(Regex("\\s+"), " ")
             .trim()
 
         statusText.text = "✅ Command mili: $original"
 
         // HELLO
         if (
-            cmd == "hello" ||
-            cmd == "hi" ||
-            cmd.contains("hello gulshan") ||
-            cmd.contains("hi gulshan") ||
-            cmd.contains("हेलो गुलशन") ||
+            cmd.contains("hello") ||
+            cmd.contains("hi") ||
             cmd.contains("हेलो") ||
-            cmd.contains("नमस्ते गुलशन") ||
             cmd.contains("नमस्ते")
         ) {
-            respond(
-                "Hello! Main Gulshan hoon. Aapki command mili."
-            )
+            respond("Hello! Main Gulshan hoon. Aapki command mili.")
+            return
+        }
+
+        // CHROME
+        if (
+            cmd.contains("chrome") ||
+            cmd.contains("chr ome") ||
+            cmd.contains("क्रोम")
+        ) {
+            openChrome()
             return
         }
 
@@ -181,15 +190,6 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        // CHROME
-        if (
-            cmd.contains("chrome") ||
-            cmd.contains("क्रोम")
-        ) {
-            openChrome()
-            return
-        }
-
         // CAMERA
         if (
             cmd.contains("camera") ||
@@ -201,34 +201,11 @@ class MainActivity : AppCompatActivity() {
 
         // SETTINGS
         if (
-            cmd.contains("setting") ||
             cmd.contains("settings") ||
+            cmd.contains("setting") ||
             cmd.contains("सेटिंग")
         ) {
             openSettings()
-            return
-        }
-
-        // GOOGLE SEARCH
-        if (
-            cmd.contains("google search") ||
-            cmd.contains("search google") ||
-            cmd.contains("गूगल पर सर्च") ||
-            cmd.contains("गूगल सर्च")
-        ) {
-            val searchText = extractSearchText(
-                original
-            )
-
-            if (searchText.isNotEmpty()) {
-                googleSearch(searchText)
-            } else {
-                openWebsite(
-                    "https://www.google.com",
-                    "Google khol rahi hoon."
-                )
-            }
-
             return
         }
 
@@ -267,8 +244,7 @@ class MainActivity : AppCompatActivity() {
             cmd.contains("today") ||
             cmd.contains("tarikh") ||
             cmd.contains("तारीख") ||
-            cmd.contains("आज की तारीख") ||
-            cmd.contains("आज की डेट")
+            cmd.contains("आज की तारीख")
         ) {
             val date = SimpleDateFormat(
                 "dd MMMM yyyy",
@@ -279,10 +255,8 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        // UNKNOWN COMMAND
         respond(
-            "Command mili: $original. " +
-            "Is command ka action abhi available nahi hai."
+            "Command mili: $original. Is command ka action abhi available nahi hai."
         )
     }
 
@@ -299,15 +273,10 @@ class MainActivity : AppCompatActivity() {
 
                 startActivity(chromeIntent)
 
-                speak("Chrome khol rahi hoon.")
-
-                showResult(
-                    "🤖 GULSHAN:\nChrome khol rahi hoon."
-                )
+                respond("Chrome khol rahi hoon.")
 
             } else {
 
-                // Chrome package na mile to browser intent
                 val browserIntent = Intent(
                     Intent.ACTION_VIEW,
                     Uri.parse("https://www.google.com")
@@ -315,20 +284,14 @@ class MainActivity : AppCompatActivity() {
 
                 startActivity(browserIntent)
 
-                speak(
+                respond(
                     "Chrome nahi mila, browser khol rahi hoon."
-                )
-
-                showResult(
-                    "🤖 GULSHAN:\nChrome nahi mila, browser khol rahi hoon."
                 )
             }
 
         } catch (e: Exception) {
 
-            respond(
-                "Browser open nahi ho saka."
-            )
+            respond("Browser open nahi ho saka.")
         }
     }
 
@@ -336,16 +299,13 @@ class MainActivity : AppCompatActivity() {
 
         try {
 
-            val cameraIntent =
-                Intent("android.media.action.IMAGE_CAPTURE")
+            val cameraIntent = Intent(
+                android.provider.MediaStore.ACTION_IMAGE_CAPTURE
+            )
 
             startActivity(cameraIntent)
 
-            speak("Camera khol rahi hoon.")
-
-            showResult(
-                "🤖 GULSHAN:\nCamera khol rahi hoon."
-            )
+            respond("Camera khol rahi hoon.")
 
         } catch (e: Exception) {
 
@@ -357,85 +317,18 @@ class MainActivity : AppCompatActivity() {
 
         try {
 
-            startActivity(
-                Intent(Settings.ACTION_SETTINGS)
+            val settingsIntent = Intent(
+                Settings.ACTION_SETTINGS
             )
 
-            speak("Settings khol rahi hoon.")
+            startActivity(settingsIntent)
 
-            showResult(
-                "🤖 GULSHAN:\nSettings khol rahi hoon."
-            )
+            respond("Settings khol rahi hoon.")
 
         } catch (e: Exception) {
 
-            respond("Settings open nahi ho saka.")
+            respond("Settings open nahi ho saki.")
         }
-    }
-
-    private fun googleSearch(searchText: String) {
-
-        try {
-
-            val encodedQuery =
-                Uri.encode(searchText)
-
-            val url =
-                "https://www.google.com/search?q=$encodedQuery"
-
-            startActivity(
-                Intent(
-                    Intent.ACTION_VIEW,
-                    Uri.parse(url)
-                )
-            )
-
-            speak(
-                "$searchText Google par search kar rahi hoon."
-            )
-
-            showResult(
-                "🤖 GULSHAN:\nGoogle par search: $searchText"
-            )
-
-        } catch (e: Exception) {
-
-            respond(
-                "Google search open nahi ho saka."
-            )
-        }
-    }
-
-    private fun extractSearchText(
-        command: String
-    ): String {
-
-        val lower = command.lowercase(
-            Locale.getDefault()
-        )
-
-        val keywords = listOf(
-            "google search",
-            "search google",
-            "गूगल पर सर्च",
-            "गूगल सर्च"
-        )
-
-        for (keyword in keywords) {
-
-            val index = lower.indexOf(keyword)
-
-            if (index >= 0) {
-
-                return command
-                    .substring(
-                        index + keyword.length
-                    )
-                    .trim()
-            }
-        }
-
-        return ""
     }
 
     private fun openWebsite(
@@ -445,57 +338,56 @@ class MainActivity : AppCompatActivity() {
 
         try {
 
-            startActivity(
-                Intent(
-                    Intent.ACTION_VIEW,
-                    Uri.parse(url)
-                )
+            val intent = Intent(
+                Intent.ACTION_VIEW,
+                Uri.parse(url)
             )
 
-            speak(message)
+            startActivity(intent)
 
-            showResult(
-                "🤖 GULSHAN:\n$message"
-            )
+            respond(message)
 
         } catch (e: Exception) {
 
-            respond(
-                "Website open nahi ho saki."
-            )
+            respond("Website open nahi ho saki.")
         }
     }
 
     private fun respond(message: String) {
+
+        statusText.text = message
 
         showResult(
             "🤖 GULSHAN:\n$message"
         )
 
         speak(message)
-
-        Toast.makeText(
-            this,
-            "Command successfully mili",
-            Toast.LENGTH_SHORT
-        ).show()
-    }
-
-    private fun showResult(message: String) {
-        resultText.text = message
     }
 
     private fun speak(message: String) {
 
-        if (::tts.isInitialized) {
+        try {
 
             tts.speak(
                 message,
                 TextToSpeech.QUEUE_FLUSH,
                 null,
-                "gulshan_voice"
+                "GULSHAN_RESPONSE"
             )
+
+        } catch (e: Exception) {
         }
+    }
+
+    private fun showResult(message: String) {
+
+        resultText.text = message
+
+        Toast.makeText(
+            this,
+            message,
+            Toast.LENGTH_SHORT
+        ).show()
     }
 
     override fun onDestroy() {
