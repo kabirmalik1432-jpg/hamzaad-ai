@@ -79,7 +79,7 @@ class VoiceService : Service() {
 
     private fun startListening() {
 
-        if (isDestroyed()) return
+        if (!::handler.isInitialized) return
 
         handler.post {
 
