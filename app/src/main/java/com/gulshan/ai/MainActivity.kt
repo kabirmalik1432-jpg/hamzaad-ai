@@ -3,6 +3,7 @@ package com.gulshan.ai
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.provider.MediaStore
 import android.provider.Settings
 import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
@@ -33,6 +34,11 @@ class MainActivity : AppCompatActivity() {
                 tts.setPitch(1.08f)
             }
         }
+
+        createInterface()
+    }
+
+    private fun createInterface() {
 
         val layout = LinearLayout(this)
         layout.orientation = LinearLayout.VERTICAL
@@ -73,6 +79,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(layout)
 
         commandButton.setOnClickListener {
+
             val command = commandBox.text.toString().trim()
 
             if (command.isEmpty()) {
@@ -87,64 +94,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun startVoiceInput() {
-
-        val intent = Intent(
-            RecognizerIntent.ACTION_RECOGNIZE_SPEECH
-        )
-
-        intent.putExtra(
-            RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
-        )
-
-        intent.putExtra(
-            RecognizerIntent.EXTRA_LANGUAGE,
-            "hi-IN"
-        )
-
-        intent.putExtra(
-            RecognizerIntent.EXTRA_PROMPT,
-            "Gulshan ko command bolo"
-        )
-
-        try {
-            startActivityForResult(intent, 100)
-        } catch (e: Exception) {
-            respond("Voice input available nahi hai.")
-        }
-    }
-
-    override fun onActivityResult(
-        requestCode: Int,
-        resultCode: Int,
-        data: Intent?
-    ) {
-        super.onActivityResult(requestCode, resultCode, data)
-
-        if (requestCode == 100 && resultCode == RESULT_OK) {
-
-            val results =
-                data?.getStringArrayListExtra(
-                    RecognizerIntent.EXTRA_RESULTS
-                )
-
-            val command = results?.firstOrNull()
-
-            if (!command.isNullOrEmpty()) {
-                commandBox.setText(command)
-                executeCommand(command)
-            }
-        }
-    }
-
     private fun executeCommand(command: String) {
 
         val original = command.trim()
 
         val cmd = original
             .lowercase(Locale.getDefault())
-            .replace("\\n", " ")
             .replace("\n", " ")
             .replace(".", "")
             .replace(",", "")
@@ -155,7 +110,7 @@ class MainActivity : AppCompatActivity() {
             .replace(Regex("\\s+"), " ")
             .trim()
 
-        statusText.text = "✅ Command mili: $original"
+        statusText.text = "Command mili: $original"
 
         // HELLO
         if (
@@ -164,14 +119,16 @@ class MainActivity : AppCompatActivity() {
             cmd.contains("हेलो") ||
             cmd.contains("नमस्ते")
         ) {
-            respond("Hello! Main Gulshan hoon. Aapki command mili.")
+            respond("Hello! Main Gulshan hoon.")
             return
         }
 
         // CHROME
         if (
             cmd.contains("chrome") ||
-            cmd.contains("chr ome") ||
+            cmd.contains("crom") ||
+            cmd.contains("chrom") ||
+            cmd.contains("krom") ||
             cmd.contains("क्रोम")
         ) {
             openChrome()
@@ -181,11 +138,24 @@ class MainActivity : AppCompatActivity() {
         // YOUTUBE
         if (
             cmd.contains("youtube") ||
+            cmd.contains("you tube") ||
             cmd.contains("यूट्यूब")
         ) {
             openWebsite(
                 "https://www.youtube.com",
                 "YouTube khol rahi hoon."
+            )
+            return
+        }
+
+        // GOOGLE
+        if (
+            cmd.contains("google") ||
+            cmd.contains("गूगल")
+        ) {
+            openWebsite(
+                "https://www.google.com",
+                "Google khol rahi hoon."
             )
             return
         }
@@ -203,21 +173,10 @@ class MainActivity : AppCompatActivity() {
         if (
             cmd.contains("settings") ||
             cmd.contains("setting") ||
-            cmd.contains("सेटिंग")
+            cmd.contains("सेटिंग") ||
+            cmd.contains("सेटिंग्स")
         ) {
             openSettings()
-            return
-        }
-
-        // GOOGLE
-        if (
-            cmd.contains("google") ||
-            cmd.contains("गूगल")
-        ) {
-            openWebsite(
-                "https://www.google.com",
-                "Google khol rahi hoon."
-            )
             return
         }
 
@@ -229,6 +188,7 @@ class MainActivity : AppCompatActivity() {
             cmd.contains("समय") ||
             cmd.contains("कितने बजे")
         ) {
+
             val time = SimpleDateFormat(
                 "hh:mm a",
                 Locale.getDefault()
@@ -246,6 +206,7 @@ class MainActivity : AppCompatActivity() {
             cmd.contains("तारीख") ||
             cmd.contains("आज की तारीख")
         ) {
+
             val date = SimpleDateFormat(
                 "dd MMMM yyyy",
                 Locale("hi", "IN")
@@ -255,27 +216,37 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
+        // UNKNOWN
         respond(
-            "Command mili: $original. Is command ka action abhi available nahi hai."
+            "Command mili: $original. " +
+                    "Is command ki capability abhi available nahi hai."
         )
     }
+
+    // ==================================================
+    // CHROME
+    // ==================================================
 
     private fun openChrome() {
 
         try {
 
-            val chromeIntent =
-                packageManager.getLaunchIntentForPackage(
-                    "com.android.chrome"
-                )
+            val chromeIntent = Intent(
+                Intent.ACTION_VIEW,
+                Uri.parse("https://www.google.com")
+            )
 
-            if (chromeIntent != null) {
+            // Directly Chrome ko target karo
+            chromeIntent.setPackage("com.android.chrome")
 
-                startActivity(chromeIntent)
+            startActivity(chromeIntent)
 
-                respond("Chrome khol rahi hoon.")
+            respond("Chrome khol rahi hoon.")
 
-            } else {
+        } catch (e: Exception) {
+
+            // Agar Chrome available nahi hai
+            try {
 
                 val browserIntent = Intent(
                     Intent.ACTION_VIEW,
@@ -285,22 +256,29 @@ class MainActivity : AppCompatActivity() {
                 startActivity(browserIntent)
 
                 respond(
-                    "Chrome nahi mila, browser khol rahi hoon."
+                    "Chrome available nahi mila, " +
+                            "available browser khol rahi hoon."
+                )
+
+            } catch (e2: Exception) {
+
+                respond(
+                    "Koi browser open nahi ho saka."
                 )
             }
-
-        } catch (e: Exception) {
-
-            respond("Browser open nahi ho saka.")
         }
     }
+
+    // ==================================================
+    // CAMERA
+    // ==================================================
 
     private fun openCamera() {
 
         try {
 
             val cameraIntent = Intent(
-                android.provider.MediaStore.ACTION_IMAGE_CAPTURE
+                MediaStore.ACTION_IMAGE_CAPTURE
             )
 
             startActivity(cameraIntent)
@@ -312,6 +290,10 @@ class MainActivity : AppCompatActivity() {
             respond("Camera open nahi ho saka.")
         }
     }
+
+    // ==================================================
+    // SETTINGS
+    // ==================================================
 
     private fun openSettings() {
 
@@ -330,6 +312,10 @@ class MainActivity : AppCompatActivity() {
             respond("Settings open nahi ho saki.")
         }
     }
+
+    // ==================================================
+    // WEBSITE
+    // ==================================================
 
     private fun openWebsite(
         url: String,
@@ -353,16 +339,102 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // ==================================================
+    // VOICE COMMAND
+    // ==================================================
+
+    private fun startVoiceInput() {
+
+        val intent = Intent(
+            RecognizerIntent.ACTION_RECOGNIZE_SPEECH
+        )
+
+        intent.putExtra(
+            RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+        )
+
+        intent.putExtra(
+            RecognizerIntent.EXTRA_LANGUAGE,
+            "hi-IN"
+        )
+
+        intent.putExtra(
+            RecognizerIntent.EXTRA_PROMPT,
+            "Gulshan ko command bolo"
+        )
+
+        try {
+
+            startActivityForResult(
+                intent,
+                100
+            )
+
+        } catch (e: Exception) {
+
+            respond(
+                "Voice input available nahi hai."
+            )
+        }
+    }
+
+    override fun onActivityResult(
+        requestCode: Int,
+        resultCode: Int,
+        data: Intent?
+    ) {
+
+        super.onActivityResult(
+            requestCode,
+            resultCode,
+            data
+        )
+
+        if (
+            requestCode == 100 &&
+            resultCode == RESULT_OK
+        ) {
+
+            val results =
+                data?.getStringArrayListExtra(
+                    RecognizerIntent.EXTRA_RESULTS
+                )
+
+            val command = results?.firstOrNull()
+
+            if (!command.isNullOrEmpty()) {
+
+                commandBox.setText(command)
+
+                executeCommand(command)
+            }
+        }
+    }
+
+    // ==================================================
+    // GULSHAN RESPONSE
+    // ==================================================
+
     private fun respond(message: String) {
 
         statusText.text = message
 
-        showResult(
+        resultText.text =
             "🤖 GULSHAN:\n$message"
-        )
+
+        Toast.makeText(
+            this,
+            message,
+            Toast.LENGTH_SHORT
+        ).show()
 
         speak(message)
     }
+
+    // ==================================================
+    // TEXT TO SPEECH
+    // ==================================================
 
     private fun speak(message: String) {
 
@@ -376,19 +448,13 @@ class MainActivity : AppCompatActivity() {
             )
 
         } catch (e: Exception) {
+            // Ignore TTS error
         }
     }
 
-    private fun showResult(message: String) {
-
-        resultText.text = message
-
-        Toast.makeText(
-            this,
-            message,
-            Toast.LENGTH_SHORT
-        ).show()
-    }
+    // ==================================================
+    // DESTROY
+    // ==================================================
 
     override fun onDestroy() {
 
