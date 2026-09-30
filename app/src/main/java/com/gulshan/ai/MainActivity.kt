@@ -118,21 +118,19 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
 
         layout.addView(title)
-        private fun normalize(command: String): String {
-    return command
-        .lowercase(Locale.getDefault())
-        .replace("गुलशन जी", "gulshan")
-        .replace("गुलशन", "gulshan")
-        .replace("हेलो", "hello")
-        .replace("हैलो", "hello")
-        .replace(",", " ")
-        .replace(".", " ")
-        .replace("!", " ")
-        .replace("?", " ")
-        .replace("।", " ")
-        .replace(Regex("\\s+"), " ")
-        .trim()
-        }
+        
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     }
 
     private fun requestBasicPermissions() {
@@ -148,23 +146,27 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         val needed = permissions.filter {
             checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED
         }
-
-        if (needed.isNotEmpty()) {
+ed.isNotEmpty()) {
             requestPermissions(needed.toTypedArray(), permissionRequest)
         }
     }
-
-    private fun normalize(command: String): String {
-        return command
-            .lowercase(Locale.getDefault())
-            .replace(",", " ")
-            .replace(".", " ")
-            .replace("!", " ")
-            .replace("?", " ")
-            .replace("।", " ")
-            .replace(Regex("\\s+"), " ")
-            .trim()
-    }
+private fun normalize(command: String): String {
+    return command
+        .lowercase(Locale.getDefault())
+        .replace("गुलशन जी", "gulshan")
+        .replace("गुलशन", "gulshan")
+        .replace("हेलो", "hello")
+        .replace("हैलो", "hello")
+        .replace(",", " ")
+        .replace(".", " ")
+        .replace("!", " ")
+        .replace("?", " ")
+        .replace("।", " ")
+        .replace(Regex("\\s+"), " ")
+        .trim()
+}
+    
+            
 
     fun executeCommand(rawCommand: String) {
         var command = normalize(rawCommand)
