@@ -19,18 +19,16 @@ import java.util.Locale
 class VoiceService : Service() {
 
     private var speechRecognizer: SpeechRecognizer? = null
-
     private lateinit var handler: Handler
 
-    private val channelId =
-        "gulshan_voice_channel"
+    private val channelId = "gulshan_voice_channel"
+    private var restarting = false
+    private var lastCommandTime = 0L
 
     override fun onCreate() {
-
         super.onCreate()
 
-        handler =
-            Handler(Looper.getMainLooper())
+        handler = Handler(Looper.getMainLooper())
 
         createNotificationChannel()
 
@@ -46,24 +44,19 @@ class VoiceService : Service() {
 
         if (Build.VERSION.SDK_INT >= 26) {
 
-            val channel =
-                NotificationChannel(
-                    channelId,
-                    "Gulshan Background Voice",
-                    NotificationManager.IMPORTANCE_LOW
-                )
+            val channel = NotificationChannel(
+                channelId,
+                "Gulshan Background Voice",
+                NotificationManager.IMPORTANCE_LOW
+            )
 
             channel.description =
                 "Gulshan AI background voice command"
 
             val manager =
-                getSystemService(
-                    NotificationManager::class.java
-                )
+                getSystemService(NotificationManager::class.java)
 
-            manager.createNotificationChannel(
-                channel
-            )
+            manager.createNotificationChannel(channel)
         }
     }
 
@@ -82,14 +75,15 @@ class VoiceService : Service() {
             )
             .setOngoing(true)
             .build()
-    }    private fun startListening() {
+    }
+
+    private fun startListening() {
+
+        if (isDestroyed()) return
 
         handler.post {
 
-            if (!SpeechRecognizer.isRecognitionAvailable(
-                    this
-                )
-            ) {
+            if (!SpeechRecognizer.isRecognitionAvailable(this)) {
                 return@post
             }
 
@@ -98,9 +92,7 @@ class VoiceService : Service() {
                 speechRecognizer?.destroy()
 
                 speechRecognizer =
-                    SpeechRecognizer.createSpeechRecognizer(
-                        this
-                    )
+                    SpeechRecognizer.createSpeechRecognizer(this)
 
                 speechRecognizer?.setRecognitionListener(
                     object : RecognitionListener {
@@ -129,7 +121,6 @@ class VoiceService : Service() {
                         override fun onError(
                             error: Int
                         ) {
-
                             restartListening()
                         }
 
@@ -146,10 +137,7 @@ class VoiceService : Service() {
                                 list?.firstOrNull()
 
                             if (!spoken.isNullOrBlank()) {
-
-                                handleVoiceCommand(
-                                    spoken
-                                )
+                                handleVoiceCommand(spoken)
                             }
 
                             restartListening()
@@ -187,12 +175,9 @@ class VoiceService : Service() {
                     false
                 )
 
-                speechRecognizer?.startListening(
-                    intent
-                )
+                speechRecognizer?.startListening(intent)
 
             } catch (e: Exception) {
-
                 restartListening()
             }
         }
@@ -200,15 +185,28 @@ class VoiceService : Service() {
 
     private fun restartListening() {
 
+        if (restarting) return
+
+        restarting = true
+
         handler.postDelayed(
             {
+                restarting = false
                 startListening()
             },
             1200
         )
-    }    private fun handleVoiceCommand(
+    }
+
+    private fun handleVoiceCommand(
         spokenText: String
     ) {
+
+        val now = System.currentTimeMillis()
+
+        if (now - lastCommandTime < 2500) {
+            return
+        }
 
         val normalized =
             spokenText
@@ -232,10 +230,13 @@ class VoiceService : Service() {
             return
         }
 
-        val intent = Intent(
-            this,
-            MainActivity::class.java
-        )
+        lastCommandTime = now
+
+        val intent =
+            Intent(
+                this,
+                MainActivity::class.java
+            )
 
         intent.putExtra(
             "background_command",
@@ -244,10 +245,16 @@ class VoiceService : Service() {
 
         intent.addFlags(
             Intent.FLAG_ACTIVITY_NEW_TASK or
-                    Intent.FLAG_ACTIVITY_SINGLE_TOP
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP
         )
 
-        startActivity(intent)
+        try {
+            startActivity(intent)
+        } catch (e: Exception) {
+            // Android background-activity restrictions
+            // may block some launches.
+        }
     }
 
     override fun onStartCommand(
@@ -261,12 +268,11 @@ class VoiceService : Service() {
 
     override fun onDestroy() {
 
+        speechRecognizer?.cancel()
         speechRecognizer?.destroy()
         speechRecognizer = null
 
-        handler.removeCallbacksAndMessages(
-            null
-        )
+        handler.removeCallbacksAndMessages(null)
 
         super.onDestroy()
     }
@@ -274,7 +280,6 @@ class VoiceService : Service() {
     override fun onBind(
         intent: Intent?
     ): IBinder? {
-
         return null
     }
 }
