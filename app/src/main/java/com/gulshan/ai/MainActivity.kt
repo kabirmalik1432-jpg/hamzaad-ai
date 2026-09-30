@@ -1,12 +1,15 @@
 package com.gulshan.ai
 
 import android.Manifest
+import android.app.AlarmManager
+import android.app.PendingIntent
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.hardware.camera2.CameraManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.AlarmClock
 import android.provider.Settings
 import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
@@ -35,14 +38,23 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         tts = TextToSpeech(this, this)
 
         buildUI()
-
         requestBasicPermissions()
 
-        val backgroundCommand =
-            intent.getStringExtra("background_command")
+        handleBackgroundCommand(intent)
+    }
 
-        if (!backgroundCommand.isNullOrBlank()) {
-            executeCommand(backgroundCommand)
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleBackgroundCommand(intent)
+    }
+
+    private fun handleBackgroundCommand(intent: Intent?) {
+        val command = intent?.getStringExtra("background_command")
+
+        if (!command.isNullOrBlank()) {
+            executeCommand(command)
+            intent.removeExtra("background_command")
         }
     }
 
@@ -60,8 +72,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         greeting.text = "Namaste! Main Gulshan hoon."
         greeting.textSize = 18f
 
-        val commandInput = EditText(this)
-        this.commandInput = commandInput
+        commandInput = EditText(this)
         commandInput.hint = "Command likho..."
 
         val executeButton = Button(this)
@@ -106,7 +117,9 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         layout.addView(resultText)
 
         setContentView(layout)
-    }    private fun requestBasicPermissions() {
+    }
+
+    private fun requestBasicPermissions() {
 
         val permissions = ArrayList<String>()
 
@@ -117,20 +130,19 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         permissions.add(Manifest.permission.RECORD_AUDIO)
         permissions.add(Manifest.permission.CAMERA)
 
-        val needPermissions = permissions.filter {
+        val needed = permissions.filter {
             checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED
         }
 
-        if (needPermissions.isNotEmpty()) {
+        if (needed.isNotEmpty()) {
             requestPermissions(
-                needPermissions.toTypedArray(),
+                needed.toTypedArray(),
                 permissionRequest
             )
         }
     }
 
     private fun normalize(command: String): String {
-
         return command
             .lowercase(Locale.getDefault())
             .replace(",", " ")
@@ -160,40 +172,37 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             command == "hello" ||
             command == "hi" ||
             command.contains("namaste") -> {
-
                 respond("Namaste! Main Gulshan hoon.")
             }
 
             command.contains("youtube") -> {
-                openWebsite("https://www.youtube.com")
-                respond("YouTube khol raha hoon.")
+                openAppOrWebsite(
+                    "com.google.android.youtube",
+                    "https://www.youtube.com",
+                    "YouTube"
+                )
             }
 
             command.contains("chrome") ||
             command.contains("crom") ||
             command.contains("chrom") ||
-            command.contains("krom") ||
-            command.contains("क्रोम") -> {
-
+            command.contains("krom") -> {
                 openChrome()
             }
 
             command == "camera" ||
             command.contains("camera kholo") ||
             command.contains("camera open") -> {
-
                 openCamera()
             }
 
             command.contains("settings") ||
             command.contains("setting kholo") -> {
-
                 openSettings()
             }
 
             command == "google" ||
             command.contains("google kholo") -> {
-
                 openWebsite("https://www.google.com")
                 respond("Google khol raha hoon.")
             }
@@ -203,7 +212,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             command.startsWith("search") ||
             command.startsWith("सर्च") -> {
 
-                var query = command
+                val query = command
                     .replaceFirst("google search", "")
                     .replaceFirst("google par", "")
                     .replaceFirst("search", "")
@@ -215,6 +224,60 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 } else {
                     googleSearch(query)
                 }
+            }
+
+            command.startsWith("website ") ||
+            command.startsWith("site ") ||
+            command.startsWith("वेबसाइट ") -> {
+
+                var site = command
+                    .replaceFirst("website ", "")
+                    .replaceFirst("site ", "")
+                    .replaceFirst("वेबसाइट ", "")
+                    .trim()
+
+                if (!site.startsWith("http")) {
+                    site = "https://$site"
+                }
+
+                openWebsite(site)
+                respond("Website khol raha hoon.")
+            }
+
+            command.contains("whatsapp") -> {
+                openInstalledApp(
+                    "com.whatsapp",
+                    "WhatsApp"
+                )
+            }
+
+            command.contains("instagram") -> {
+                openInstalledApp(
+                    "com.instagram.android",
+                    "Instagram"
+                )
+            }
+
+            command.contains("facebook") -> {
+                openInstalledApp(
+                    "com.facebook.katana",
+                    "Facebook"
+                )
+            }
+
+            command.contains("maps") ||
+            command.contains("map") -> {
+                openInstalledApp(
+                    "com.google.android.apps.maps",
+                    "Google Maps"
+                )
+            }
+
+            command.contains("gmail") -> {
+                openInstalledApp(
+                    "com.google.android.gm",
+                    "Gmail"
+                )
             }
 
             command.contains("time") ||
@@ -239,11 +302,23 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 ).format(Date())
 
                 respond("Aaj $date hai.")
-            }            command.contains("flashlight on") ||
+            }
+
+            command.contains("timer") ||
+            command.contains("टाइमर") -> {
+                startTimer(command)
+            }
+
+            command.contains("alarm") ||
+            command.contains("alaram") ||
+            command.contains("अलार्म") -> {
+                startAlarm(command)
+            }
+
+            command.contains("flashlight on") ||
             command.contains("torch on") ||
             command.contains("torch chalu") ||
             command.contains("flash on") -> {
-
                 setFlashlight(true)
             }
 
@@ -251,7 +326,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             command.contains("torch off") ||
             command.contains("torch band") ||
             command.contains("flash off") -> {
-
                 setFlashlight(false)
             }
 
@@ -292,84 +366,59 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
             command.contains("background voice on") ||
             command.contains("background voice chalu") ||
-            command.contains("background voice start") ||
-            command.contains("background listening on") -> {
-
+            command.contains("background voice start") -> {
                 startBackgroundVoice()
             }
 
             command.contains("background voice off") ||
             command.contains("background voice band") ||
             command.contains("background voice stop") -> {
-
                 stopBackgroundVoice()
             }
 
             command.contains("update gulshan") ||
             command.contains("gulshan update") ||
             command == "update" -> {
-
                 openUpdatePage()
+            }
+
+            command.contains("call allow") -> {
+                setPermissionLimit("allow_call", true)
+                respond("Call command allow kar diya.")
+            }
+
+            command.contains("call band") ||
+            command.contains("call deny") -> {
+                setPermissionLimit("allow_call", false)
+                respond("Call command band kar diya.")
+            }
+
+            command.contains("sms allow") -> {
+                setPermissionLimit("allow_sms", true)
+                respond("SMS command allow kar diya.")
+            }
+
+            command.contains("sms band") ||
+            command.contains("sms deny") -> {
+                setPermissionLimit("allow_sms", false)
+                respond("SMS command band kar diya.")
+            }
+
+            command.startsWith("yaad rakho ") ||
+            command.startsWith("remember ") -> {
+                learnCommand(command)
             }
 
             command.contains("app band") ||
             command.contains("app close") ||
-            command.contains("exit") ||
-            command.contains("बंद करो") -> {
+            command.contains("exit") -> {
 
                 stopBackgroundVoice()
                 respond("Gulshan band ho raha hai.")
                 finishAndRemoveTask()
             }
 
-            command.contains("call allow") -> {
-
-                getSharedPreferences("gulshan", MODE_PRIVATE)
-                    .edit()
-                    .putBoolean("allow_call", true)
-                    .apply()
-
-                respond("Call command allow kar diya.")
-            }
-
-            command.contains("call band") ||
-            command.contains("call deny") -> {
-
-                getSharedPreferences("gulshan", MODE_PRIVATE)
-                    .edit()
-                    .putBoolean("allow_call", false)
-                    .apply()
-
-                respond("Call command band kar diya.")
-            }
-
-            command.contains("sms allow") -> {
-
-                getSharedPreferences("gulshan", MODE_PRIVATE)
-                    .edit()
-                    .putBoolean("allow_sms", true)
-                    .apply()
-
-                respond("SMS command allow kar diya.")
-            }
-
-            command.contains("sms band") ||
-            command.contains("sms deny") -> {
-
-                getSharedPreferences("gulshan", MODE_PRIVATE)
-                    .edit()
-                    .putBoolean("allow_sms", false)
-                    .apply()
-
-                respond("SMS command band kar diya.")
-            }            command.startsWith("yaad rakho ") ||
-            command.startsWith("remember ") -> {
-
-                learnCommand(command)
-            }
-
             else -> {
-
                 runLearnedCommand(command)
             }
         }
@@ -378,49 +427,76 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun openChrome() {
 
         try {
-
-            val intent = packageManager
-                .getLaunchIntentForPackage(
+            val intent =
+                packageManager.getLaunchIntentForPackage(
                     "com.android.chrome"
                 )
 
             if (intent != null) {
-
                 startActivity(intent)
-
                 respond("Chrome khol raha hoon.")
-
             } else {
-
-                openWebsite(
-                    "https://www.google.com"
-                )
-
-                respond(
-                    "Chrome available nahi mila, browser khol raha hoon."
-                )
+                openWebsite("https://www.google.com")
+                respond("Chrome nahi mila, browser khol raha hoon.")
             }
 
         } catch (e: Exception) {
-
             respond("Chrome nahi khul saka.")
+        }
+    }
+
+    private fun openInstalledApp(
+        packageName: String,
+        name: String
+    ) {
+
+        try {
+            val intent =
+                packageManager.getLaunchIntentForPackage(packageName)
+
+            if (intent != null) {
+                startActivity(intent)
+                respond("$name khol raha hoon.")
+            } else {
+                respond("$name phone mein installed nahi hai.")
+            }
+
+        } catch (e: Exception) {
+            respond("$name nahi khul saka.")
+        }
+    }
+
+    private fun openAppOrWebsite(
+        packageName: String,
+        website: String,
+        name: String
+    ) {
+
+        try {
+            val intent =
+                packageManager.getLaunchIntentForPackage(packageName)
+
+            if (intent != null) {
+                startActivity(intent)
+                respond("$name khol raha hoon.")
+            } else {
+                openWebsite(website)
+                respond("$name ka web version khol raha hoon.")
+            }
+
+        } catch (e: Exception) {
+            openWebsite(website)
         }
     }
 
     private fun openCamera() {
 
         try {
-
-            val intent = Intent(
-                "android.media.action.IMAGE_CAPTURE"
+            startActivity(
+                Intent("android.media.action.IMAGE_CAPTURE")
             )
-
-            startActivity(intent)
-
             respond("Camera khol raha hoon.")
-
         } catch (e: Exception) {
-
             respond("Camera nahi khul saka.")
         }
     }
@@ -428,15 +504,11 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun openSettings() {
 
         try {
-
             startActivity(
                 Intent(Settings.ACTION_SETTINGS)
             )
-
             respond("Settings khol raha hoon.")
-
         } catch (e: Exception) {
-
             respond("Settings nahi khul saka.")
         }
     }
@@ -444,16 +516,13 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun openWebsite(url: String) {
 
         try {
-
             startActivity(
                 Intent(
                     Intent.ACTION_VIEW,
                     Uri.parse(url)
                 )
             )
-
         } catch (e: Exception) {
-
             respond("Website nahi khul saki.")
         }
     }
@@ -471,69 +540,182 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         )
     }
 
-    private fun callNumber(number: String) {
+    private fun startTimer(command: String) {
 
-        val allowed = getSharedPreferences(
-            "gulshan",
-            MODE_PRIVATE
-        ).getBoolean(
-            "allow_call",
-            false
-        )
+        val match = Regex(
+            "(\\d+)\\s*(second|seconds|sec|minute|minutes|min|hour|hours|ghanta|minute)"
+        ).find(command)
 
-        if (!allowed) {
+        if (match == null) {
+            respond("Timer ke liye bolo: 10 minute timer.")
+            return
+        }
 
-            respond(
-                "Call command abhi band hai. Pehle bolo: call allow."
+        val value = match.groupValues[1].toInt()
+
+        val unit = match.groupValues[2]
+
+        val seconds = when {
+            unit.contains("hour") ||
+            unit.contains("ghanta") -> value * 3600
+
+            unit.contains("minute") ||
+            unit.contains("min") -> value * 60
+
+            else -> value
+        }
+
+        try {
+
+            val intent =
+                Intent(AlarmClock.ACTION_SET_TIMER)
+
+            intent.putExtra(
+                AlarmClock.EXTRA_LENGTH,
+                seconds
             )
 
+            intent.putExtra(
+                AlarmClock.EXTRA_SKIP_UI,
+                false
+            )
+
+            startActivity(intent)
+
+            respond("$value $unit ka timer set kar raha hoon.")
+
+        } catch (e: Exception) {
+            respond("Timer set nahi ho saka.")
+        }
+    }
+
+    private fun startAlarm(command: String) {
+
+        val match = Regex(
+            "(\\d{1,2})[:.]?(\\d{2})?\\s*(am|pm)?"
+        ).find(command)
+
+        if (match == null) {
+            respond("Alarm ke liye bolo: alarm 7:30 am.")
+            return
+        }
+
+        var hour =
+            match.groupValues[1].toInt()
+
+        val minute =
+            match.groupValues[2]
+                .ifEmpty { "0" }
+                .toInt()
+
+        val ampm =
+            match.groupValues[3]
+
+        if (ampm == "pm" && hour < 12) {
+            hour += 12
+        }
+
+        if (ampm == "am" && hour == 12) {
+            hour = 0
+        }
+
+        if (hour !in 0..23 || minute !in 0..59) {
+            respond("Alarm ka time sahi nahi hai.")
             return
         }
 
         try {
 
-            val intent = Intent(
-                Intent.ACTION_DIAL,
-                Uri.parse("tel:$number")
+            val intent =
+                Intent(AlarmClock.ACTION_SET_ALARM)
+
+            intent.putExtra(
+                AlarmClock.EXTRA_HOUR,
+                hour
+            )
+
+            intent.putExtra(
+                AlarmClock.EXTRA_MINUTES,
+                minute
+            )
+
+            intent.putExtra(
+                AlarmClock.EXTRA_SKIP_UI,
+                false
             )
 
             startActivity(intent)
 
+            respond(
+                "Alarm $hour:${
+                    minute.toString().padStart(2, '0')
+                } ke liye khol raha hoon."
+            )
+
+        } catch (e: Exception) {
+            respond("Alarm set nahi ho saka.")
+        }
+    }
+
+    private fun callNumber(number: String) {
+
+        val allowed =
+            getSharedPreferences(
+                "gulshan",
+                MODE_PRIVATE
+            ).getBoolean(
+                "allow_call",
+                false
+            )
+
+        if (!allowed) {
+            respond(
+                "Call command abhi band hai. Pehle bolo: call allow."
+            )
+            return
+        }
+
+        try {
+
+            startActivity(
+                Intent(
+                    Intent.ACTION_DIAL,
+                    Uri.parse("tel:$number")
+                )
+            )
+
             respond("Dialer khol raha hoon.")
 
         } catch (e: Exception) {
-
-            respond(
-                "Call screen nahi khul saki."
-            )
+            respond("Call screen nahi khul saki.")
         }
     }
 
     private fun sendSms(message: String) {
 
-        val allowed = getSharedPreferences(
-            "gulshan",
-            MODE_PRIVATE
-        ).getBoolean(
-            "allow_sms",
-            false
-        )
+        val allowed =
+            getSharedPreferences(
+                "gulshan",
+                MODE_PRIVATE
+            ).getBoolean(
+                "allow_sms",
+                false
+            )
 
         if (!allowed) {
-
             respond(
                 "SMS command abhi band hai. Pehle bolo: SMS allow."
             )
-
             return
         }
 
         try {
 
-            val intent = Intent(
-                Intent.ACTION_SENDTO,
-                Uri.parse("smsto:")
-            )
+            val intent =
+                Intent(
+                    Intent.ACTION_SENDTO,
+                    Uri.parse("smsto:")
+                )
 
             intent.putExtra(
                 "sms_body",
@@ -542,60 +724,44 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
             startActivity(intent)
 
-            respond(
-                "SMS screen khol raha hoon."
-            )
+            respond("SMS screen khol raha hoon.")
 
         } catch (e: Exception) {
-
-            respond(
-                "SMS screen nahi khul saki."
-            )
+            respond("SMS screen nahi khul saki.")
         }
-    }    private fun setFlashlight(enabled: Boolean) {
+    }
+
+    private fun setFlashlight(enabled: Boolean) {
 
         try {
 
-            val cameraManager =
+            val manager =
                 getSystemService(
                     CAMERA_SERVICE
                 ) as CameraManager
 
             val cameraId =
-                cameraManager.cameraIdList.firstOrNull()
+                manager.cameraIdList.firstOrNull()
 
             if (cameraId == null) {
-
-                respond(
-                    "Torch available nahi hai."
-                )
-
+                respond("Torch available nahi hai.")
                 return
             }
 
-            cameraManager.setTorchMode(
+            manager.setTorchMode(
                 cameraId,
                 enabled
             )
 
-            if (enabled) {
-
-                respond(
+            respond(
+                if (enabled)
                     "Flashlight ON."
-                )
-
-            } else {
-
-                respond(
+                else
                     "Flashlight OFF."
-                )
-            }
+            )
 
         } catch (e: Exception) {
-
-            respond(
-                "Flashlight control ke liye camera permission chahiye."
-            )
+            respond("Flashlight control nahi ho saka.")
         }
     }
 
@@ -603,9 +769,10 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         try {
 
-            val intent = Intent(
-                RecognizerIntent.ACTION_RECOGNIZE_SPEECH
-            )
+            val intent =
+                Intent(
+                    RecognizerIntent.ACTION_RECOGNIZE_SPEECH
+                )
 
             intent.putExtra(
                 RecognizerIntent.EXTRA_LANGUAGE_MODEL,
@@ -628,10 +795,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             )
 
         } catch (e: Exception) {
-
-            respond(
-                "Voice recognition available nahi hai."
-            )
+            respond("Voice recognition available nahi hai.")
         }
     }
 
@@ -660,15 +824,11 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             val command =
                 results?.firstOrNull()
 
-            if (!command.isNullOrEmpty()) {
+            if (!command.isNullOrBlank()) {
 
-                commandInput.setText(
-                    command
-                )
+                commandInput.setText(command)
 
-                executeCommand(
-                    command
-                )
+                executeCommand(command)
             }
         }
     }
@@ -676,7 +836,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun startBackgroundVoice() {
 
         if (
-            Build.VERSION.SDK_INT >= 23 &&
             checkSelfPermission(
                 Manifest.permission.RECORD_AUDIO
             ) != PackageManager.PERMISSION_GRANTED
@@ -696,22 +855,16 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             return
         }
 
-        val intent = Intent(
-            this,
-            VoiceService::class.java
-        )
+        val intent =
+            Intent(
+                this,
+                VoiceService::class.java
+            )
 
         if (Build.VERSION.SDK_INT >= 26) {
-
-            startForegroundService(
-                intent
-            )
-
+            startForegroundService(intent)
         } else {
-
-            startService(
-                intent
-            )
+            startService(intent)
         }
 
         respond(
@@ -731,7 +884,9 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         respond(
             "Background voice OFF."
         )
-    }    private fun openUpdatePage() {
+    }
+
+    private fun openUpdatePage() {
 
         openWebsite(
             "https://github.com/kabirmalik1432-jpg/hamzaad-ai/releases"
@@ -742,21 +897,35 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         )
     }
 
+    private fun setPermissionLimit(
+        key: String,
+        value: Boolean
+    ) {
+
+        getSharedPreferences(
+            "gulshan",
+            MODE_PRIVATE
+        )
+            .edit()
+            .putBoolean(key, value)
+            .apply()
+    }
+
     private fun learnCommand(command: String) {
 
-        val text = command
-            .replaceFirst("yaad rakho ", "")
-            .replaceFirst("remember ", "")
-            .trim()
+        val text =
+            command
+                .replaceFirst("yaad rakho ", "")
+                .replaceFirst("remember ", "")
+                .trim()
 
-        val parts = text.split("=")
+        val parts =
+            text.split("=")
 
         if (parts.size != 2) {
-
             respond(
-                "Format bolo: yaad rakho mera youtube = youtube kholo"
+                "Format: yaad rakho mera youtube = youtube kholo"
             )
-
             return
         }
 
@@ -786,17 +955,15 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         command: String
     ) {
 
-        val prefs =
+        val learned =
             getSharedPreferences(
                 "gulshan_commands",
                 MODE_PRIVATE
             )
-
-        val learned =
-            prefs.getString(
-                command,
-                null
-            )
+                .getString(
+                    command,
+                    null
+                )
 
         if (learned != null) {
 
@@ -840,16 +1007,10 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         status: Int
     ) {
 
-        if (
-            status ==
-            TextToSpeech.SUCCESS
-        ) {
+        if (status == TextToSpeech.SUCCESS) {
 
             tts.language =
-                Locale(
-                    "hi",
-                    "IN"
-                )
+                Locale("hi", "IN")
 
             tts.setSpeechRate(
                 0.92f
@@ -864,7 +1025,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     override fun onDestroy() {
 
         if (::tts.isInitialized) {
-
             tts.stop()
             tts.shutdown()
         }
