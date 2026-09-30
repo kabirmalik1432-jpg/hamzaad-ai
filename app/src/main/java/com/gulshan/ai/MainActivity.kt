@@ -5,8 +5,11 @@ import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
 import android.content.Intent
 import android.graphics.Color
-import android.view.Gravity
-import android.widget.*
+import android.widget.Button
+import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import java.util.Locale
 
@@ -20,58 +23,43 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Text To Speech
-        tts = TextToSpeech(this) {
-            if (it == TextToSpeech.SUCCESS) {
+        tts = TextToSpeech(this) { result ->
+            if (result == TextToSpeech.SUCCESS) {
                 tts.language = Locale("hi", "IN")
             }
         }
 
-        // Main Layout
-        val layout = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(40, 60, 40, 40)
-        }
+        val layout = LinearLayout(this)
+        layout.orientation = LinearLayout.VERTICAL
+        layout.setPadding(40, 60, 40, 40)
 
-        // Title
-        val title = TextView(this).apply {
-            text = "GULSHAN AI"
-            textSize = 32f
-        }
+        val title = TextView(this)
+        title.text = "GULSHAN AI"
+        title.textSize = 32f
 
-        // Greeting
-        statusText = TextView(this).apply {
-            text = "Namaste! Main Gulshan hoon."
-            textSize = 20f
-            setPadding(0, 30, 0, 20)
-        }
+        statusText = TextView(this)
+        statusText.text = "Namaste! Main Gulshan hoon."
+        statusText.textSize = 20f
+        statusText.setPadding(0, 30, 0, 20)
 
-        // Command Box
-        commandBox = EditText(this).apply {
-            hint = "Command likho..."
-            textSize = 18f
-            
-        }setSingleLine(true)
+        commandBox = EditText(this)
+        commandBox.hint = "Command likho..."
+        commandBox.textSize = 18f
+        commandBox.setSingleLine(true)
 
-        // Command Button
-        val commandButton = Button(this).apply {
-            text = "COMMAND CHALAO"
-            textSize = 17f
-        }
+        val commandButton = Button(this)
+        commandButton.text = "COMMAND CHALAO"
+        commandButton.textSize = 17f
 
-        // Voice Button
-        val voiceButton = Button(this).apply {
-            text = "🎤 VOICE COMMAND"
-            textSize = 17f
-        }
+        val voiceButton = Button(this)
+        voiceButton.text = "🎤 VOICE COMMAND"
+        voiceButton.textSize = 17f
 
-        // Result Box
-        resultText = TextView(this).apply {
-            text = "Result yahan dikhega."
-            textSize = 19f
-            setPadding(0, 35, 0, 20)
-            setTextColor(Color.DKGRAY)
-        }
+        resultText = TextView(this)
+        resultText.text = "Result yahan dikhega."
+        resultText.textSize = 19f
+        resultText.setTextColor(Color.DKGRAY)
+        resultText.setPadding(0, 35, 0, 20)
 
         layout.addView(title)
         layout.addView(statusText)
@@ -82,7 +70,6 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(layout)
 
-        // COMMAND CHALAO
         commandButton.setOnClickListener {
 
             val command = commandBox.text.toString().trim()
@@ -104,15 +91,10 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // VOICE COMMAND
         voiceButton.setOnClickListener {
             startVoiceInput()
         }
     }
-
-    // -------------------------
-    // VOICE INPUT
-    // -------------------------
 
     private fun startVoiceInput() {
 
@@ -148,13 +130,8 @@ class MainActivity : AppCompatActivity() {
 
             resultText.text =
                 "Phone mein voice recognition available nahi hai."
-
         }
     }
-
-    // -------------------------
-    // VOICE RESULT
-    // -------------------------
 
     override fun onActivityResult(
         requestCode: Int,
@@ -178,8 +155,7 @@ class MainActivity : AppCompatActivity() {
                     RecognizerIntent.EXTRA_RESULTS
                 )
 
-            val command =
-                results?.firstOrNull()
+            val command = results?.firstOrNull()
 
             if (!command.isNullOrEmpty()) {
 
@@ -198,10 +174,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // -------------------------
-    // COMMAND ENGINE
-    // -------------------------
-
     private fun executeCommand(command: String) {
 
         val originalCommand = command.trim()
@@ -214,14 +186,12 @@ class MainActivity : AppCompatActivity() {
             .replace("?", "")
             .trim()
 
-        // COMMAND SCREEN PAR DIKHAO
         statusText.text =
             "✅ Command mili: $originalCommand"
 
         resultText.text =
             "Gulshan process kar raha hai..."
 
-        // HELLO COMMANDS
         if (
             cmd == "hello" ||
             cmd == "hi" ||
@@ -252,7 +222,6 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        // GULSHAN KO BULANE WALI COMMAND
         if (
             cmd.contains("gulshan") ||
             cmd.contains("गुलशन")
@@ -275,7 +244,6 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        // UNKNOWN COMMAND
         val response =
             "Command mili: $originalCommand. Is command ka action abhi set nahi hai."
 
@@ -291,10 +259,6 @@ class MainActivity : AppCompatActivity() {
         ).show()
     }
 
-    // -------------------------
-    // SPEAK
-    // -------------------------
-
     private fun speak(text: String) {
 
         if (::tts.isInitialized) {
@@ -307,10 +271,6 @@ class MainActivity : AppCompatActivity() {
             )
         }
     }
-
-    // -------------------------
-    // CLOSE
-    // -------------------------
 
     override fun onDestroy() {
 
