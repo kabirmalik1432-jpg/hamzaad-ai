@@ -1,10 +1,11 @@
 package com.gulshan.ai
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
-import android.content.Intent
-import android.graphics.Color
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
@@ -16,9 +17,9 @@ import java.util.Locale
 class MainActivity : AppCompatActivity() {
 
     private lateinit var tts: TextToSpeech
+    private lateinit var commandBox: EditText
     private lateinit var statusText: TextView
     private lateinit var resultText: TextView
-    private lateinit var commandBox: EditText
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -26,6 +27,8 @@ class MainActivity : AppCompatActivity() {
         tts = TextToSpeech(this) { result ->
             if (result == TextToSpeech.SUCCESS) {
                 tts.language = Locale("hi", "IN")
+                tts.setSpeechRate(0.92f)
+                tts.setPitch(1.08f)
             }
         }
 
@@ -49,17 +52,14 @@ class MainActivity : AppCompatActivity() {
 
         val commandButton = Button(this)
         commandButton.text = "COMMAND CHALAO"
-        commandButton.textSize = 17f
 
         val voiceButton = Button(this)
         voiceButton.text = "🎤 VOICE COMMAND"
-        voiceButton.textSize = 17f
 
         resultText = TextView(this)
         resultText.text = "Result yahan dikhega."
-        resultText.textSize = 19f
-        resultText.setTextColor(Color.DKGRAY)
-        resultText.setPadding(0, 35, 0, 20)
+        resultText.textSize = 18f
+        resultText.setPadding(0, 30, 0, 20)
 
         layout.addView(title)
         layout.addView(statusText)
@@ -71,22 +71,11 @@ class MainActivity : AppCompatActivity() {
         setContentView(layout)
 
         commandButton.setOnClickListener {
-
             val command = commandBox.text.toString().trim()
 
             if (command.isEmpty()) {
-
-                statusText.text = "⚠️ Command nahi mili."
-                resultText.text = "Pehle command likho."
-
-                Toast.makeText(
-                    this,
-                    "Pehle command likho",
-                    Toast.LENGTH_SHORT
-                ).show()
-
+                showResult("Pehle command likho.")
             } else {
-
                 executeCommand(command)
             }
         }
@@ -118,18 +107,9 @@ class MainActivity : AppCompatActivity() {
         )
 
         try {
-
-            startActivityForResult(
-                intent,
-                100
-            )
-
+            startActivityForResult(intent, 100)
         } catch (e: Exception) {
-
-            statusText.text = "❌ Voice input available nahi hai."
-
-            resultText.text =
-                "Phone mein voice recognition available nahi hai."
+            showResult("Voice input available nahi hai.")
         }
     }
 
@@ -138,17 +118,9 @@ class MainActivity : AppCompatActivity() {
         resultCode: Int,
         data: Intent?
     ) {
+        super.onActivityResult(requestCode, resultCode, data)
 
-        super.onActivityResult(
-            requestCode,
-            resultCode,
-            data
-        )
-
-        if (
-            requestCode == 100 &&
-            resultCode == RESULT_OK
-        ) {
+        if (requestCode == 100 && resultCode == RESULT_OK) {
 
             val results =
                 data?.getStringArrayListExtra(
@@ -158,27 +130,17 @@ class MainActivity : AppCompatActivity() {
             val command = results?.firstOrNull()
 
             if (!command.isNullOrEmpty()) {
-
                 commandBox.setText(command)
-
                 executeCommand(command)
-
-            } else {
-
-                statusText.text =
-                    "❌ Voice command nahi mili."
-
-                resultText.text =
-                    "Dobara voice command bolo."
             }
         }
     }
 
     private fun executeCommand(command: String) {
 
-        val originalCommand = command.trim()
+        val original = command.trim()
 
-        val cmd = originalCommand
+        val cmd = original
             .lowercase(Locale.getDefault())
             .replace(".", "")
             .replace(",", "")
@@ -186,88 +148,245 @@ class MainActivity : AppCompatActivity() {
             .replace("?", "")
             .trim()
 
-        statusText.text =
-            "✅ Command mili: $originalCommand"
+        statusText.text = "✅ Command mili: $original"
 
-        resultText.text =
-            "Gulshan process kar raha hai..."
+        // -------------------------
+        // GREETING
+        // -------------------------
 
         if (
             cmd == "hello" ||
             cmd == "hi" ||
-            cmd == "hello gulshan" ||
-            cmd == "hi gulshan" ||
             cmd.contains("hello gulshan") ||
-            cmd.contains("hello main gulshan") ||
-            cmd.contains("hello me gulshan") ||
+            cmd.contains("hi gulshan") ||
             cmd.contains("हेलो गुलशन") ||
-            cmd.contains("हेलो मैं गुलशन") ||
             cmd.contains("नमस्ते गुलशन")
         ) {
-
-            val response =
-                "Hello! Main Gulshan hoon. Command mili."
-
-            resultText.text =
-                "🤖 GULSHAN:\n$response"
-
-            speak(response)
-
-            Toast.makeText(
-                this,
-                "Command successfully mili",
-                Toast.LENGTH_SHORT
-            ).show()
-
+            respond(
+                "Hello! Main Gulshan hoon. Aapki command mili."
+            )
             return
         }
+
+        // -------------------------
+        // TIME
+        // -------------------------
 
         if (
-            cmd.contains("gulshan") ||
-            cmd.contains("गुलशन")
+            cmd.contains("time") ||
+            cmd.contains("samay") ||
+            cmd.contains("समय") ||
+            cmd.contains("टाइम")
         ) {
+            val time = java.text.SimpleDateFormat(
+                "hh:mm a",
+                Locale.getDefault()
+            ).format(java.util.Date())
 
-            val response =
-                "Ji, main Gulshan hoon. Aapki command mili: $originalCommand"
+            respond("Abhi time hai $time.")
+            return
+        }
 
-            resultText.text =
-                "🤖 GULSHAN:\n$response"
+        // -------------------------
+        // YOUTUBE
+        // -------------------------
 
-            speak(response)
+        if (
+            cmd.contains("youtube") ||
+            cmd.contains("यूट्यूब")
+        ) {
+            openWebsite("https://www.youtube.com")
+            respond("YouTube khol rahi hoon.")
+            return
+        }
 
-            Toast.makeText(
-                this,
-                "Command mili",
-                Toast.LENGTH_SHORT
-            ).show()
+        // -------------------------
+        // GOOGLE
+        // -------------------------
+
+        if (
+            cmd.contains("google") ||
+            cmd.contains("गूगल")
+        ) {
+            openWebsite("https://www.google.com")
+            respond("Google khol rahi hoon.")
+            return
+        }
+
+        // -------------------------
+        // CHROME
+        // -------------------------
+
+        if (
+            cmd.contains("chrome") ||
+            cmd.contains("क्रोम")
+        ) {
+            openApp("com.android.chrome")
+            return
+        }
+
+        // -------------------------
+        // CAMERA
+        // -------------------------
+
+        if (
+            cmd.contains("camera") ||
+            cmd.contains("कैमरा")
+        ) {
+            try {
+                val cameraIntent =
+                    Intent("android.media.action.IMAGE_CAPTURE")
+
+                startActivity(cameraIntent)
+
+                respond("Camera khol rahi hoon.")
+
+            } catch (e: Exception) {
+                respond("Camera open nahi ho saka.")
+            }
 
             return
         }
 
-        val response =
-            "Command mili: $originalCommand. Is command ka action abhi set nahi hai."
+        // -------------------------
+        // SETTINGS
+        // -------------------------
 
-        resultText.text =
-            "🤖 GULSHAN:\n$response"
+        if (
+            cmd.contains("setting") ||
+            cmd.contains("settings") ||
+            cmd.contains("सेटिंग")
+        ) {
+            try {
+                startActivity(
+                    Intent(Settings.ACTION_SETTINGS)
+                )
 
-        speak(response)
+                respond("Settings khol rahi hoon.")
+
+            } catch (e: Exception) {
+                respond("Settings open nahi ho saka.")
+            }
+
+            return
+        }
+
+        // -------------------------
+        // APP UPDATE REQUEST
+        // -------------------------
+
+        if (
+            cmd.contains("update") ||
+            cmd.contains("अपडेट")
+        ) {
+            respond(
+                "Update system ke liye remote update service connect karni hogi. " +
+                "Main abhi bina permission ke khud APK install nahi kar sakti."
+            )
+            return
+        }
+
+        // -------------------------
+        // UNKNOWN COMMAND
+        // -------------------------
+
+        respond(
+            "Command mili: $original. " +
+            "Is command ka action abhi available nahi hai."
+        )
+    }
+
+    // -------------------------
+    // RESPONSE
+    // -------------------------
+
+    private fun respond(message: String) {
+
+        showResult(
+            "🤖 GULSHAN:\n$message"
+        )
+
+        speak(message)
 
         Toast.makeText(
             this,
-            "Command mili",
+            "Command successfully mili",
             Toast.LENGTH_SHORT
         ).show()
     }
 
-    private fun speak(text: String) {
+    private fun showResult(message: String) {
+        resultText.text = message
+    }
+
+    // -------------------------
+    // SPEECH
+    // -------------------------
+
+    private fun speak(message: String) {
 
         if (::tts.isInitialized) {
 
             tts.speak(
-                text,
+                message,
                 TextToSpeech.QUEUE_FLUSH,
                 null,
-                "gulshan_command"
+                "gulshan_voice"
+            )
+        }
+    }
+
+    // -------------------------
+    // OPEN WEBSITE
+    // -------------------------
+
+    private fun openWebsite(url: String) {
+
+        try {
+
+            val intent = Intent(
+                Intent.ACTION_VIEW,
+                Uri.parse(url)
+            )
+
+            startActivity(intent)
+
+        } catch (e: Exception) {
+
+            showResult(
+                "Website open nahi ho saki."
+            )
+        }
+    }
+
+    // -------------------------
+    // OPEN APP
+    // -------------------------
+
+    private fun openApp(packageName: String) {
+
+        try {
+
+            val launchIntent =
+                packageManager.getLaunchIntentForPackage(
+                    packageName
+                )
+
+            if (launchIntent != null) {
+
+                startActivity(launchIntent)
+
+            } else {
+
+                respond(
+                    "Ye app phone mein installed nahi hai."
+                )
+            }
+
+        } catch (e: Exception) {
+
+            respond(
+                "App open nahi ho saka."
             )
         }
     }
