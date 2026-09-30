@@ -146,7 +146,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         val needed = permissions.filter {
             checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED
         }
-ed.isNotEmpty()) {
+if (needed.isNotEmpty()) {
             requestPermissions(needed.toTypedArray(), permissionRequest)
         }
     }
