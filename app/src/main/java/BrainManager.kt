@@ -1956,6 +1956,7 @@ class MainActivity :
     override fun onDestroy() {
 
         if (::tts.isInitialized) {
+
             tts.stop()
             tts.shutdown()
         }
