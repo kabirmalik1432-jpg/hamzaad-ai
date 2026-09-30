@@ -27,6 +27,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private lateinit var tts: TextToSpeech
     private lateinit var resultText: TextView
     private lateinit var commandInput: EditText
+    private lateinit var brainManager: BrainManager
 
     private val voiceRequest = 1001
     private val permissionRequest = 1002
@@ -35,6 +36,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         super.onCreate(savedInstanceState)
 
         tts = TextToSpeech(this, this)
+        brainManager = BrainManager(this)
 
         buildUI()
         requestBasicPermissions()
@@ -49,6 +51,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun handleBackgroundCommand(intent: Intent?) {
         val command = intent?.getStringExtra("background_command")
+
         if (!command.isNullOrBlank()) {
             executeCommand(command)
             intent.removeExtra("background_command")
@@ -61,7 +64,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         layout.setPadding(30, 30, 30, 30)
 
         val title = TextView(this)
-        title.text = "GULSHAN AI V4"
+        title.text = "GULSHAN AI V6"
         title.textSize = 30f
 
         val greeting = TextView(this)
@@ -118,19 +121,17 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
 
         layout.addView(title)
-        
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+        layout.addView(greeting)
+        layout.addView(commandInput)
+        layout.addView(executeButton)
+        layout.addView(voiceButton)
+        layout.addView(backgroundButton)
+        layout.addView(stopBackgroundButton)
+        layout.addView(historyButton)
+        layout.addView(statusButton)
+        layout.addView(resultText)
+
+        setContentView(layout)
     }
 
     private fun requestBasicPermissions() {
@@ -146,29 +147,33 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         val needed = permissions.filter {
             checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED
         }
-if (needed.isNotEmpty()) {
-            requestPermissions(needed.toTypedArray(), permissionRequest)
+
+        if (needed.isNotEmpty()) {
+            requestPermissions(
+                needed.toTypedArray(),
+                permissionRequest
+            )
         }
     }
-private fun normalize(command: String): String {
-    return command
-        .lowercase(Locale.getDefault())
-        .replace("गुलशन जी", "gulshan")
-        .replace("गुलशन", "gulshan")
-        .replace("हेलो", "hello")
-        .replace("हैलो", "hello")
-        .replace(",", " ")
-        .replace(".", " ")
-        .replace("!", " ")
-        .replace("?", " ")
-        .replace("।", " ")
-        .replace(Regex("\\s+"), " ")
-        .trim()
-}
-    
-            
+
+    private fun normalize(command: String): String {
+        return command
+            .lowercase(Locale.getDefault())
+            .replace("गुलशन जी", "gulshan")
+            .replace("गुलशन", "gulshan")
+            .replace("हेलो", "hello")
+            .replace("हैलो", "hello")
+            .replace(",", " ")
+            .replace(".", " ")
+            .replace("!", " ")
+            .replace("?", " ")
+            .replace("।", " ")
+            .replace(Regex("\\s+"), " ")
+            .trim()
+    }
 
     fun executeCommand(rawCommand: String) {
+
         var command = normalize(rawCommand)
 
         if (command.isEmpty()) {
@@ -177,12 +182,59 @@ private fun normalize(command: String): String {
         }
 
         if (command.contains("gulshan")) {
-            command = command.replace("gulshan", "").trim()
+            command = command
+                .replace("gulshan", "")
+                .trim()
         }
 
         saveHistory(command)
 
+        val brainResult = brainManager.understand(command)
+
+        when (brainResult) {
+
+            "IMAGE_REQUEST" -> {
+                respond("Image request samajh gaya.")
+                return
+            }
+
+            "VIDEO_REQUEST" -> {
+                respond("Video request samajh gaya.")
+                return
+            }
+
+            "YOUTUBE_REQUEST" -> {
+                openAppOrWebsite(
+                    "com.google.android.youtube",
+                    "https://www.youtube.com",
+                    "YouTube"
+                )
+                return
+            }
+
+            "SKILL_REQUEST" -> {
+                if (
+                    command.startsWith("yaad rakho ") ||
+                    command.startsWith("remember ")
+                ) {
+                    learnCommand(command)
+                } else {
+                    respond("Skill request samajh gaya.")
+                }
+                return
+            }
+
+            "SEARCH_REQUEST" -> {
+                // Purane search system ko command handle karne do.
+            }
+
+            "UNKNOWN_COMMAND" -> {
+                // Purana command system handle karega.
+            }
+        }
+
         when {
+
             command == "hello" ||
             command == "hi" ||
             command.contains("namaste") ||
@@ -228,6 +280,7 @@ private fun normalize(command: String): String {
             command.startsWith("google par") ||
             command.startsWith("search") ||
             command.startsWith("सर्च") -> {
+
                 val query = command
                     .replaceFirst("google search", "")
                     .replaceFirst("google par", "")
@@ -245,6 +298,7 @@ private fun normalize(command: String): String {
             command.startsWith("website ") ||
             command.startsWith("site ") ||
             command.startsWith("वेबसाइट ") -> {
+
                 var site = command
                     .replaceFirst("website ", "")
                     .replaceFirst("site ", "")
@@ -261,39 +315,60 @@ private fun normalize(command: String): String {
 
             command.contains("whatsapp") ||
             command.contains("व्हाट्सएप") -> {
-                openInstalledApp("com.whatsapp", "WhatsApp")
+                openInstalledApp(
+                    "com.whatsapp",
+                    "WhatsApp"
+                )
             }
 
             command.contains("instagram") ||
             command.contains("इंस्टाग्राम") -> {
-                openInstalledApp("com.instagram.android", "Instagram")
+                openInstalledApp(
+                    "com.instagram.android",
+                    "Instagram"
+                )
             }
 
             command.contains("facebook") ||
             command.contains("फेसबुक") -> {
-                openInstalledApp("com.facebook.katana", "Facebook")
+                openInstalledApp(
+                    "com.facebook.katana",
+                    "Facebook"
+                )
             }
 
             command.contains("maps") ||
             command.contains("map") ||
             command.contains("नक्शा") -> {
-                openInstalledApp("com.google.android.apps.maps", "Google Maps")
+                openInstalledApp(
+                    "com.google.android.apps.maps",
+                    "Google Maps"
+                )
             }
 
             command.contains("gmail") ||
             command.contains("जीमेल") -> {
-                openInstalledApp("com.google.android.gm", "Gmail")
+                openInstalledApp(
+                    "com.google.android.gm",
+                    "Gmail"
+                )
             }
 
             command.contains("calendar") ||
             command.contains("कैलेंडर") -> {
-                openInstalledApp("com.google.android.calendar", "Google Calendar")
+                openInstalledApp(
+                    "com.google.android.calendar",
+                    "Google Calendar"
+                )
             }
 
             command.contains("play store") ||
             command.contains("playstore") ||
             command.contains("प्ले स्टोर") -> {
-                openInstalledApp("com.android.vending", "Play Store")
+                openInstalledApp(
+                    "com.android.vending",
+                    "Play Store"
+                )
             }
 
             command.contains("wifi") ||
@@ -305,6 +380,12 @@ private fun normalize(command: String): String {
             command.contains("bluetooth") ||
             command.contains("ब्लूटूथ") -> {
                 openBluetoothSettings()
+            }
+
+            command.contains("history clear") ||
+            command.contains("clear history") ||
+            command.contains("हिस्ट्री साफ") -> {
+                clearHistory()
             }
 
             command.contains("battery") ||
@@ -323,22 +404,19 @@ private fun normalize(command: String): String {
             command.contains("command history") ||
             command.contains("हिस्ट्री") ||
             command.contains("इतिहास") -> {
-                showHistory()            }
-
-            command.contains("history clear") ||
-            command.contains("clear history") ||
-            command.contains("हिस्ट्री साफ") -> {
-                clearHistory()
+                showHistory()
             }
 
             command.contains("time") ||
             command.contains("samay") ||
             command.contains("समय") ||
             command.contains("टाइम") -> {
+
                 val time = SimpleDateFormat(
                     "hh:mm a",
                     Locale.getDefault()
                 ).format(Date())
+
                 respond("Abhi time $time hai.")
             }
 
@@ -346,10 +424,12 @@ private fun normalize(command: String): String {
             command.contains("tarikh") ||
             command.contains("तारीख") ||
             command.contains("डेट") -> {
+
                 val date = SimpleDateFormat(
                     "dd MMMM yyyy",
                     Locale("hi", "IN")
                 ).format(Date())
+
                 respond("Aaj $date hai.")
             }
 
@@ -383,6 +463,7 @@ private fun normalize(command: String): String {
             command.startsWith("call ") ||
             command.startsWith("phone ") ||
             command.startsWith("कॉल ") -> {
+
                 val number = command
                     .replaceFirst("call ", "")
                     .replaceFirst("phone ", "")
@@ -400,6 +481,7 @@ private fun normalize(command: String): String {
             command.startsWith("sms ") ||
             command.startsWith("message ") ||
             command.startsWith("मैसेज ") -> {
+
                 val message = command
                     .replaceFirst("sms ", "")
                     .replaceFirst("message ", "")
@@ -434,24 +516,36 @@ private fun normalize(command: String): String {
             }
 
             command.contains("call allow") -> {
-                setPermissionLimit("allow_call", true)
+                setPermissionLimit(
+                    "allow_call",
+                    true
+                )
                 respond("Call command allow kar diya.")
             }
 
             command.contains("call band") ||
             command.contains("call deny") -> {
-                setPermissionLimit("allow_call", false)
+                setPermissionLimit(
+                    "allow_call",
+                    false
+                )
                 respond("Call command band kar diya.")
             }
 
             command.contains("sms allow") -> {
-                setPermissionLimit("allow_sms", true)
+                setPermissionLimit(
+                    "allow_sms",
+                    true
+                )
                 respond("SMS command allow kar diya.")
             }
 
             command.contains("sms band") ||
             command.contains("sms deny") -> {
-                setPermissionLimit("allow_sms", false)
+                setPermissionLimit(
+                    "allow_sms",
+                    false
+                )
                 respond("SMS command band kar diya.")
             }
 
@@ -464,6 +558,7 @@ private fun normalize(command: String): String {
             command.contains("app close") ||
             command == "exit" ||
             command == "band ho jao" -> {
+
                 stopBackgroundVoice()
                 respond("Gulshan band ho raha hai.")
                 finishAndRemoveTask()
@@ -477,27 +572,42 @@ private fun normalize(command: String): String {
 
     private fun openChrome() {
         try {
-            val intent = packageManager.getLaunchIntentForPackage("com.android.chrome")
+            val intent =
+                packageManager.getLaunchIntentForPackage(
+                    "com.android.chrome"
+                )
+
             if (intent != null) {
                 startActivity(intent)
                 respond("Chrome khol raha hoon.")
             } else {
                 openWebsite("https://www.google.com")
-                respond("Chrome nahi mila, browser khol raha hoon.")
+                respond(
+                    "Chrome nahi mila, browser khol raha hoon."
+                )
             }
         } catch (e: Exception) {
             respond("Chrome nahi khul saka.")
         }
     }
 
-    private fun openInstalledApp(packageName: String, name: String) {
+    private fun openInstalledApp(
+        packageName: String,
+        name: String
+    ) {
         try {
-            val intent = packageManager.getLaunchIntentForPackage(packageName)
+            val intent =
+                packageManager.getLaunchIntentForPackage(
+                    packageName
+                )
+
             if (intent != null) {
                 startActivity(intent)
                 respond("$name khol raha hoon.")
             } else {
-                respond("$name phone mein installed nahi hai.")
+                respond(
+                    "$name phone mein installed nahi hai."
+                )
             }
         } catch (e: Exception) {
             respond("$name nahi khul saka.")
@@ -510,13 +620,19 @@ private fun normalize(command: String): String {
         name: String
     ) {
         try {
-            val intent = packageManager.getLaunchIntentForPackage(packageName)
+            val intent =
+                packageManager.getLaunchIntentForPackage(
+                    packageName
+                )
+
             if (intent != null) {
                 startActivity(intent)
                 respond("$name khol raha hoon.")
             } else {
                 openWebsite(website)
-                respond("$name ka web version khol raha hoon.")
+                respond(
+                    "$name ka web version khol raha hoon."
+                )
             }
         } catch (e: Exception) {
             openWebsite(website)
@@ -525,7 +641,9 @@ private fun normalize(command: String): String {
 
     private fun openCamera() {
         try {
-            startActivity(Intent("android.media.action.IMAGE_CAPTURE"))
+            startActivity(
+                Intent("android.media.action.IMAGE_CAPTURE")
+            )
             respond("Camera khol raha hoon.")
         } catch (e: Exception) {
             respond("Camera nahi khul saka.")
@@ -534,7 +652,9 @@ private fun normalize(command: String): String {
 
     private fun openSettings() {
         try {
-            startActivity(Intent(Settings.ACTION_SETTINGS))
+            startActivity(
+                Intent(Settings.ACTION_SETTINGS)
+            )
             respond("Settings khol raha hoon.")
         } catch (e: Exception) {
             respond("Settings nahi khul saka.")
@@ -543,50 +663,77 @@ private fun normalize(command: String): String {
 
     private fun openWifiSettings() {
         try {
-            startActivity(Intent(Settings.ACTION_WIFI_SETTINGS))
+            startActivity(
+                Intent(Settings.ACTION_WIFI_SETTINGS)
+            )
             respond("Wi-Fi settings khol raha hoon.")
         } catch (e: Exception) {
-            respond("Wi-Fi settings nahi khul saki.")
+            respond(
+                "Wi-Fi settings nahi khul saki."
+            )
         }
     }
 
     private fun openBluetoothSettings() {
         try {
-            startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS))
-            respond("Bluetooth settings khol raha hoon.")
+            startActivity(
+                Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
+            )
+            respond(
+                "Bluetooth settings khol raha hoon."
+            )
         } catch (e: Exception) {
-            respond("Bluetooth settings nahi khul saki.")
+            respond(
+                "Bluetooth settings nahi khul saki."
+            )
         }
     }
 
     private fun openWebsite(url: String) {
         try {
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+            startActivity(
+                Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse(url)
+                )
+            )
         } catch (e: Exception) {
             respond("Website nahi khul saki.")
         }
     }
 
     private fun googleSearch(query: String) {
-        val url = "https://www.google.com/search?q=" + Uri.encode(query)
+        val url =
+            "https://www.google.com/search?q=" +
+                    Uri.encode(query)
+
         openWebsite(url)
-        respond("Google par $query search kar raha hoon.")
+        respond(
+            "Google par $query search kar raha hoon."
+        )
     }
 
     private fun startTimer(command: String) {
+
         val match = Regex(
             "(\\d+)\\s*(second|seconds|sec|minute|minutes|min|hour|hours|ghanta|ghante)"
         ).find(command)
 
         if (match == null) {
-            respond("Timer ke liye bolo: 10 minute timer.")
+            respond(
+                "Timer ke liye bolo: 10 minute timer."
+            )
             return
         }
 
-        val value = match.groupValues[1].toInt()
-        val unit = match.groupValues[2]
+        val value =
+            match.groupValues[1].toInt()
+
+        val unit =
+            match.groupValues[2]
 
         val seconds = when {
+
             unit.contains("hour") ||
             unit.contains("ghanta") ||
             unit.contains("ghante") ->
@@ -596,146 +743,307 @@ private fun normalize(command: String): String {
             unit.contains("min") ->
                 value * 60
 
-            else -> value
+            else ->
+                value
         }
 
         try {
-            val intent = Intent(AlarmClock.ACTION_SET_TIMER)
-            intent.putExtra(AlarmClock.EXTRA_LENGTH, seconds)
-            intent.putExtra(AlarmClock.EXTRA_SKIP_UI, false)
+            val intent =
+                Intent(AlarmClock.ACTION_SET_TIMER)
+
+            intent.putExtra(
+                AlarmClock.EXTRA_LENGTH,
+                seconds
+            )
+
+            intent.putExtra(
+                AlarmClock.EXTRA_SKIP_UI,
+                false
+            )
+
             startActivity(intent)
-            respond("$value $unit ka timer set kar raha hoon.")
+
+            respond(
+                "$value $unit ka timer set kar raha hoon."
+            )
         } catch (e: Exception) {
             respond("Timer set nahi ho saka.")
         }
     }
 
     private fun startAlarm(command: String) {
+
         val match = Regex(
             "(\\d{1,2})[:.]?(\\d{2})?\\s*(am|pm)?"
         ).find(command)
 
         if (match == null) {
-            respond("Alarm ke liye bolo: alarm 7:30 am.")
+            respond(
+                "Alarm ke liye bolo: alarm 7:30 am."
+            )
             return
         }
 
-        var hour = match.groupValues[1].toInt()
-        val minute = match.groupValues[2].ifEmpty { "0" }.toInt()
-        val ampm = match.groupValues[3]
+        var hour =
+            match.groupValues[1].toInt()
 
-        if (ampm == "pm" && hour < 12) hour += 12
-        if (ampm == "am" && hour == 12) hour = 0
+        val minute =
+            match.groupValues[2]
+                .ifEmpty { "0" }
+                .toInt()
 
-        if (hour !in 0..23 || minute !in 0..59) {
-            respond("Alarm ka time sahi nahi hai.")
+        val ampm =
+            match.groupValues[3]
+
+        if (ampm == "pm" && hour < 12) {
+            hour += 12
+        }
+
+        if (ampm == "am" && hour == 12) {
+            hour = 0
+        }
+
+        if (
+            hour !in 0..23 ||
+            minute !in 0..59
+        ) {
+            respond(
+                "Alarm ka time sahi nahi hai."
+            )
             return
         }
 
         try {
-            val intent = Intent(AlarmClock.ACTION_SET_ALARM)
-            intent.putExtra(AlarmClock.EXTRA_HOUR, hour)
-            intent.putExtra(AlarmClock.EXTRA_MINUTES, minute)
-            intent.putExtra(AlarmClock.EXTRA_SKIP_UI, false)
+            val intent =
+                Intent(AlarmClock.ACTION_SET_ALARM)
+
+            intent.putExtra(
+                AlarmClock.EXTRA_HOUR,
+                hour
+            )
+
+            intent.putExtra(
+                AlarmClock.EXTRA_MINUTES,
+                minute
+            )
+
+            intent.putExtra(
+                AlarmClock.EXTRA_SKIP_UI,
+                false
+            )
+
             startActivity(intent)
 
-            val displayHour = if (hour % 12 == 0) 12 else hour % 12
-            val suffix = if (hour >= 12) "PM" else "AM"
+            val displayHour =
+                if (hour % 12 == 0)
+                    12
+                else
+                    hour % 12
+
+            val suffix =
+                if (hour >= 12)
+                    "PM"
+                else
+                    "AM"
 
             respond(
-                "Alarm $displayHour:${minute.toString().padStart(2, '0')} $suffix ke liye khol raha hoon."
+                "Alarm $displayHour:" +
+                        minute.toString().padStart(2, '0') +
+                        " $suffix ke liye khol raha hoon."
             )
+
         } catch (e: Exception) {
-            respond("Alarm set nahi ho saka.")
+            respond(
+                "Alarm set nahi ho saka."
+            )
         }
     }
 
     private fun callNumber(number: String) {
-        val allowed = getSharedPreferences("gulshan", MODE_PRIVATE)
-            .getBoolean("allow_call", false)
+
+        val allowed =
+            getSharedPreferences(
+                "gulshan",
+                MODE_PRIVATE
+            ).getBoolean(
+                "allow_call",
+                false
+            )
 
         if (!allowed) {
-            respond("Call command abhi band hai. Pehle bolo: call allow.")
+            respond(
+                "Call command abhi band hai. " +
+                        "Pehle bolo: call allow."
+            )
             return
         }
 
         try {
-            startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$number")))
-            respond("Dialer khol raha hoon.")
+            startActivity(
+                Intent(
+                    Intent.ACTION_DIAL,
+                    Uri.parse("tel:$number")
+                )
+            )
+
+            respond(
+                "Dialer khol raha hoon."
+            )
+
         } catch (e: Exception) {
-            respond("Call screen nahi khul saki.")
+            respond(
+                "Call screen nahi khul saki."
+            )
         }
     }
 
     private fun sendSms(message: String) {
-        val allowed = getSharedPreferences("gulshan", MODE_PRIVATE)
-            .getBoolean("allow_sms", false)
+
+        val allowed =
+            getSharedPreferences(
+                "gulshan",
+                MODE_PRIVATE
+            ).getBoolean(
+                "allow_sms",
+                false
+            )
 
         if (!allowed) {
-            respond("SMS command abhi band hai. Pehle bolo: SMS allow.")
+            respond(
+                "SMS command abhi band hai. " +
+                        "Pehle bolo: SMS allow."
+            )
             return
         }
 
         try {
-            val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:"))
-            intent.putExtra("sms_body", message)
+            val intent =
+                Intent(
+                    Intent.ACTION_SENDTO,
+                    Uri.parse("smsto:")
+                )
+
+            intent.putExtra(
+                "sms_body",
+                message
+            )
+
             startActivity(intent)
-            respond("SMS screen khol raha hoon.")
+
+            respond(
+                "SMS screen khol raha hoon."
+            )
+
         } catch (e: Exception) {
-            respond("SMS screen nahi khul saki.")
+            respond(
+                "SMS screen nahi khul saki."
+            )
         }
     }
 
-    private fun setFlashlight(enabled: Boolean) {
+    private fun setFlashlight(
+        enabled: Boolean
+    ) {
         try {
-            val manager = getSystemService(CAMERA_SERVICE) as CameraManager
-            val cameraId = manager.cameraIdList.firstOrNull()
+
+            val manager =
+                getSystemService(
+                    CAMERA_SERVICE
+                ) as CameraManager
+
+            val cameraId =
+                manager.cameraIdList.firstOrNull()
 
             if (cameraId == null) {
-                respond("Torch available nahi hai.")
+                respond(
+                    "Torch available nahi hai."
+                )
                 return
             }
 
-            manager.setTorchMode(cameraId, enabled)
-            respond(if (enabled) "Flashlight ON." else "Flashlight OFF.")
+            manager.setTorchMode(
+                cameraId,
+                enabled
+            )
+
+            respond(
+                if (enabled)
+                    "Flashlight ON."
+                else
+                    "Flashlight OFF."
+            )
+
         } catch (e: Exception) {
-            respond("Flashlight control nahi ho saka.")
+            respond(
+                "Flashlight control nahi ho saka."
+            )
         }
     }
 
     private fun startVoiceCommand() {
         try {
-            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+
+            val intent =
+                Intent(
+                    RecognizerIntent.ACTION_RECOGNIZE_SPEECH
+                )
+
             intent.putExtra(
                 RecognizerIntent.EXTRA_LANGUAGE_MODEL,
                 RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
             )
-            intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "hi-IN")
+
+            intent.putExtra(
+                RecognizerIntent.EXTRA_LANGUAGE,
+                "hi-IN"
+            )
+
             intent.putExtra(
                 RecognizerIntent.EXTRA_PROMPT,
                 "Gulshan ko command bolo..."
             )
-            startActivityForResult(intent, voiceRequest)
+
+            startActivityForResult(
+                intent,
+                voiceRequest
+            )
+
         } catch (e: Exception) {
-            respond("Voice recognition available nahi hai.")
+            respond(
+                "Voice recognition available nahi hai."
+            )
         }
     }
 
-    @Deprecated("Use Activity Result APIs in a future version.")
+    @Deprecated(
+        "Use Activity Result APIs in a future version."
+    )
     override fun onActivityResult(
         requestCode: Int,
         resultCode: Int,
         data: Intent?
     ) {
-        super.onActivityResult(requestCode, resultCode, data)
+        super.onActivityResult(
+            requestCode,
+            resultCode,
+            data
+        )
 
-        if (requestCode == voiceRequest && resultCode == RESULT_OK) {
-            val results = data?.getStringArrayListExtra(
-                RecognizerIntent.EXTRA_RESULTS
-            )
-            val command = results?.firstOrNull()
+        if (
+            requestCode == voiceRequest &&
+            resultCode == RESULT_OK
+        ) {
+
+            val results =
+                data?.getStringArrayListExtra(
+                    RecognizerIntent.EXTRA_RESULTS
+                )
+
+            val command =
+                results?.firstOrNull()
 
             if (!command.isNullOrBlank()) {
+
                 commandInput.setText(command)
                 executeCommand(command)
             }
@@ -743,61 +1051,131 @@ private fun normalize(command: String): String {
     }
 
     private fun startBackgroundVoice() {
-        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+
+        if (
+            checkSelfPermission(
+                Manifest.permission.RECORD_AUDIO
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+
             requestPermissions(
-                arrayOf(Manifest.permission.RECORD_AUDIO),
+                arrayOf(
+                    Manifest.permission.RECORD_AUDIO
+                ),
                 permissionRequest
             )
-            respond("Pehle microphone permission allow karo.")
+
+            respond(
+                "Pehle microphone permission allow karo."
+            )
+
             return
         }
 
-        getSharedPreferences("gulshan", MODE_PRIVATE)
+        getSharedPreferences(
+            "gulshan",
+            MODE_PRIVATE
+        )
             .edit()
-            .putBoolean("background_voice_enabled", true)
+            .putBoolean(
+                "background_voice_enabled",
+                true
+            )
             .apply()
 
-        val intent = Intent(this, VoiceService::class.java)
+        val intent =
+            Intent(
+                this,
+                VoiceService::class.java
+            )
 
         try {
+
             if (Build.VERSION.SDK_INT >= 26) {
                 startForegroundService(intent)
             } else {
                 startService(intent)
             }
-            respond("Background voice ON. Ab bolo: Gulshan...")
+
+            respond(
+                "Background voice ON. " +
+                        "Ab bolo: Gulshan..."
+            )
+
         } catch (e: Exception) {
-            getSharedPreferences("gulshan", MODE_PRIVATE)
+
+            getSharedPreferences(
+                "gulshan",
+                MODE_PRIVATE
+            )
                 .edit()
-                .putBoolean("background_voice_enabled", false)
+                .putBoolean(
+                    "background_voice_enabled",
+                    false
+                )
                 .apply()
-            respond("Background voice start nahi ho saki.")
+
+            respond(
+                "Background voice start nahi ho saki."
+            )
         }
     }
 
     private fun stopBackgroundVoice() {
-        stopService(Intent(this, VoiceService::class.java))
 
-        getSharedPreferences("gulshan", MODE_PRIVATE)
+        stopService(
+            Intent(
+                this,
+                VoiceService::class.java
+            )
+        )
+
+        getSharedPreferences(
+            "gulshan",
+            MODE_PRIVATE
+        )
             .edit()
-            .putBoolean("background_voice_enabled", false)
+            .putBoolean(
+                "background_voice_enabled",
+                false
+            )
             .apply()
 
-        respond("Background voice OFF.")
-    }    private fun showStatus() {
-        val prefs = getSharedPreferences("gulshan", MODE_PRIVATE)
+        respond(
+            "Background voice OFF."
+        )
+    }
+
+    private fun showStatus() {
+
+        val prefs =
+            getSharedPreferences(
+                "gulshan",
+                MODE_PRIVATE
+            )
 
         val backgroundOn =
-            prefs.getBoolean("background_voice_enabled", false)
+            prefs.getBoolean(
+                "background_voice_enabled",
+                false
+            )
 
         val callAllowed =
-            prefs.getBoolean("allow_call", false)
+            prefs.getBoolean(
+                "allow_call",
+                false
+            )
 
         val smsAllowed =
-            prefs.getBoolean("allow_sms", false)
+            prefs.getBoolean(
+                "allow_sms",
+                false
+            )
 
         val batteryManager =
-            getSystemService(BATTERY_SERVICE) as BatteryManager
+            getSystemService(
+                BATTERY_SERVICE
+            ) as BatteryManager
 
         val battery =
             batteryManager.getIntProperty(
@@ -807,10 +1185,18 @@ private fun normalize(command: String): String {
         val status = """
             Gulshan Status
 
-            Background Voice: ${if (backgroundOn) "ON" else "OFF"}
-            Call Command: ${if (callAllowed) "ALLOW" else "OFF"}
-            SMS Command: ${if (smsAllowed) "ALLOW" else "OFF"}
-            Battery: ${if (battery >= 0) "$battery%" else "Unknown"}
+            Background Voice: ${
+            if (backgroundOn) "ON" else "OFF"
+        }
+            Call Command: ${
+            if (callAllowed) "ALLOW" else "OFF"
+        }
+            SMS Command: ${
+            if (smsAllowed) "ALLOW" else "OFF"
+        }
+            Battery: ${
+            if (battery >= 0) "$battery%" else "Unknown"
+        }
         """.trimIndent()
 
         resultText.text = status
@@ -822,9 +1208,16 @@ private fun normalize(command: String): String {
         ).show()
 
         if (::tts.isInitialized) {
+
             tts.speak(
-                "Background voice ${if (backgroundOn) "on" else "off"}. " +
-                        "Battery ${if (battery >= 0) battery else "unknown"} percent.",
+                "Background voice " +
+                        if (backgroundOn) "on" else "off" +
+                        ". Battery " +
+                        if (battery >= 0)
+                            battery
+                        else
+                            "unknown" +
+                        " percent.",
                 TextToSpeech.QUEUE_FLUSH,
                 null,
                 "GULSHAN_STATUS"
@@ -833,8 +1226,11 @@ private fun normalize(command: String): String {
     }
 
     private fun showBattery() {
+
         val batteryManager =
-            getSystemService(BATTERY_SERVICE) as BatteryManager
+            getSystemService(
+                BATTERY_SERVICE
+            ) as BatteryManager
 
         val battery =
             batteryManager.getIntProperty(
@@ -842,17 +1238,24 @@ private fun normalize(command: String): String {
             )
 
         if (battery >= 0) {
+
             respond(
-                "Phone ki battery $battery percent hai."
+                "Phone ki battery " +
+                        "$battery percent hai."
             )
+
         } else {
+
             respond(
                 "Battery status nahi mil saka."
             )
         }
     }
 
-    private fun saveHistory(command: String) {
+    private fun saveHistory(
+        command: String
+    ) {
+
         val prefs =
             getSharedPreferences(
                 "gulshan_history",
@@ -888,6 +1291,7 @@ private fun normalize(command: String): String {
     }
 
     private fun showHistory() {
+
         val prefs =
             getSharedPreferences(
                 "gulshan_history",
@@ -903,21 +1307,27 @@ private fun normalize(command: String): String {
                 ?: emptyList()
 
         if (items.isEmpty()) {
+
             resultText.text =
                 "Command History\nAbhi koi command nahi hai."
 
             respond(
                 "Abhi command history khaali hai."
             )
+
             return
         }
 
         val text =
             buildString {
-                append("Command History\n\n")
+
+                append(
+                    "Command History\n\n"
+                )
 
                 items.takeLast(20)
                     .forEachIndexed { index, item ->
+
                         append(
                             "${index + 1}. $item\n"
                         )
@@ -934,6 +1344,7 @@ private fun normalize(command: String): String {
     }
 
     private fun clearHistory() {
+
         getSharedPreferences(
             "gulshan_history",
             MODE_PRIVATE
@@ -948,6 +1359,7 @@ private fun normalize(command: String): String {
     }
 
     private fun openUpdatePage() {
+
         openWebsite(
             "https://github.com/kabirmalik1432-jpg/hamzaad-ai/releases"
         )
@@ -961,6 +1373,7 @@ private fun normalize(command: String): String {
         key: String,
         value: Boolean
     ) {
+
         getSharedPreferences(
             "gulshan",
             MODE_PRIVATE
@@ -976,6 +1389,7 @@ private fun normalize(command: String): String {
     private fun learnCommand(
         command: String
     ) {
+
         val text =
             command
                 .replaceFirst(
@@ -992,9 +1406,11 @@ private fun normalize(command: String): String {
             text.split("=")
 
         if (parts.size != 2) {
+
             respond(
                 "Format: yaad rakho mera youtube = youtube kholo"
             )
+
             return
         }
 
@@ -1023,6 +1439,7 @@ private fun normalize(command: String): String {
     private fun runLearnedCommand(
         command: String
     ) {
+
         val learned =
             getSharedPreferences(
                 "gulshan_commands",
@@ -1034,8 +1451,11 @@ private fun normalize(command: String): String {
                 )
 
         if (learned != null) {
+
             executeCommand(learned)
+
         } else {
+
             respond(
                 "Ye command abhi available nahi hai. " +
                         "Bolo: yaad rakho phrase = action."
@@ -1046,6 +1466,7 @@ private fun normalize(command: String): String {
     private fun respond(
         message: String
     ) {
+
         resultText.text =
             "Gulshan: $message"
 
@@ -1056,6 +1477,7 @@ private fun normalize(command: String): String {
         ).show()
 
         if (::tts.isInitialized) {
+
             tts.speak(
                 message,
                 TextToSpeech.QUEUE_FLUSH,
@@ -1068,6 +1490,7 @@ private fun normalize(command: String): String {
     override fun onInit(
         status: Int
     ) {
+
         if (status == TextToSpeech.SUCCESS) {
 
             val result =
@@ -1079,6 +1502,7 @@ private fun normalize(command: String): String {
                 result == TextToSpeech.LANG_MISSING_DATA ||
                 result == TextToSpeech.LANG_NOT_SUPPORTED
             ) {
+
                 tts.language =
                     Locale.getDefault()
             }
