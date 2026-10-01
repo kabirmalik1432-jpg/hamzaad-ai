@@ -130,7 +130,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         showResult("Command: $command")
 
         when {
-
             cmd == "hello gulshan" ||
                     cmd == "hello" ||
                     cmd.contains("हेलो गुलशन") -> {
@@ -246,11 +245,13 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 Manifest.permission.RECORD_AUDIO
             ) != PackageManager.PERMISSION_GRANTED
         ) {
+
             ActivityCompat.requestPermissions(
                 this,
                 arrayOf(Manifest.permission.RECORD_AUDIO),
                 permissionRequest
             )
+
             return
         }
 
@@ -274,8 +275,14 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         )
 
         try {
-            startActivityForResult(intent, voiceRequest)
+
+            startActivityForResult(
+                intent,
+                voiceRequest
+            )
+
         } catch (e: Exception) {
+
             showResult("Voice recognition available nahi hai.")
         }
     }
@@ -286,9 +293,15 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         resultCode: Int,
         data: Intent?
     ) {
-        super.onActivityResult(requestCode, resultCode, data)
 
-        if (requestCode == voiceRequest &&
+        super.onActivityResult(
+            requestCode,
+            resultCode,
+            data
+        )
+
+        if (
+            requestCode == voiceRequest &&
             resultCode == RESULT_OK &&
             data != null
         ) {
@@ -315,8 +328,11 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         )
 
         if (intent != null) {
+
             startActivity(intent)
+
         } else {
+
             openUrl("https://www.youtube.com")
         }
     }
@@ -328,8 +344,11 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         )
 
         if (intent != null) {
+
             startActivity(intent)
+
         } else {
+
             openUrl("https://www.google.com")
         }
     }
@@ -337,11 +356,15 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun openCamera() {
 
         try {
+
             val intent = Intent(
                 android.provider.MediaStore.ACTION_IMAGE_CAPTURE
             )
+
             startActivity(intent)
+
         } catch (e: Exception) {
+
             showResult("Camera open nahi ho saka.")
         }
     }
@@ -349,25 +372,32 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun openSettings() {
 
         try {
+
             startActivity(
                 Intent(Settings.ACTION_SETTINGS)
             )
+
         } catch (e: Exception) {
+
             showResult("Settings open nahi ho saka.")
         }
     }
 
     private fun openGoogle() {
+
         openUrl("https://www.google.com")
     }
 
     private fun openBatterySettings() {
 
         try {
+
             startActivity(
                 Intent(Settings.ACTION_BATTERY_SAVER_SETTINGS)
             )
+
         } catch (e: Exception) {
+
             openSettings()
         }
     }
@@ -375,6 +405,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun openUrl(url: String) {
 
         try {
+
             val intent = Intent(
                 Intent.ACTION_VIEW,
                 Uri.parse(url)
@@ -383,6 +414,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             startActivity(intent)
 
         } catch (e: Exception) {
+
             showResult("Link open nahi ho saka.")
         }
     }
@@ -392,26 +424,32 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     ): Intent? {
 
         return try {
+
             packageManager.getLaunchIntentForPackage(
                 packageName
             )
+
         } catch (e: Exception) {
+
             null
         }
     }
 
     private fun startVoiceService() {
 
-        if (ContextCompat.checkSelfPermission(
+        if (
+            ContextCompat.checkSelfPermission(
                 this,
                 Manifest.permission.RECORD_AUDIO
             ) != PackageManager.PERMISSION_GRANTED
         ) {
+
             ActivityCompat.requestPermissions(
                 this,
                 arrayOf(Manifest.permission.RECORD_AUDIO),
                 permissionRequest
             )
+
             return
         }
 
@@ -423,13 +461,21 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             )
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
                 startForegroundService(intent)
+
             } else {
+
                 startService(intent)
             }
 
-            showResult("Background voice service started.")
-            speak("Background voice service start kar diya.")
+            showResult(
+                "Background voice service started."
+            )
+
+            speak(
+                "Background voice service start kar diya."
+            )
 
         } catch (e: Exception) {
 
@@ -450,8 +496,13 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
             stopService(intent)
 
-            showResult("Background voice service stopped.")
-            speak("Background voice service band kar diya.")
+            showResult(
+                "Background voice service stopped."
+            )
+
+            speak(
+                "Background voice service band kar diya."
+            )
 
         } catch (e: Exception) {
 
@@ -471,6 +522,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 Manifest.permission.RECORD_AUDIO
             ) != PackageManager.PERMISSION_GRANTED
         ) {
+
             permissions.add(
                 Manifest.permission.RECORD_AUDIO
             )
@@ -482,6 +534,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 Manifest.permission.CAMERA
             ) != PackageManager.PERMISSION_GRANTED
         ) {
+
             permissions.add(
                 Manifest.permission.CAMERA
             )
@@ -494,6 +547,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 Manifest.permission.POST_NOTIFICATIONS
             ) != PackageManager.PERMISSION_GRANTED
         ) {
+
             permissions.add(
                 Manifest.permission.POST_NOTIFICATIONS
             )
@@ -510,6 +564,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun showResult(message: String) {
+
         resultText.text = message
     }
 
@@ -533,7 +588,10 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         if (status == TextToSpeech.SUCCESS) {
 
-            tts?.language = Locale("hi", "IN")
+            tts?.language = Locale(
+                "hi",
+                "IN"
+            )
         }
     }
 
