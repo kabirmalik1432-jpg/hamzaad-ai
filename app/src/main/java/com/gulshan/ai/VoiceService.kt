@@ -22,6 +22,7 @@ import java.util.Locale
 class VoiceService : Service(), TextToSpeech.OnInitListener {
 
     private var speechRecognizer: SpeechRecognizer? = null
+
     private lateinit var handler: Handler
     private lateinit var tts: TextToSpeech
 
@@ -62,7 +63,9 @@ class VoiceService : Service(), TextToSpeech.OnInitListener {
                 "Gulshan AI background voice command"
 
             val manager =
-                getSystemService(NotificationManager::class.java)
+                getSystemService(
+                    NotificationManager::class.java
+                )
 
             manager.createNotificationChannel(channel)
         }
@@ -211,11 +214,6 @@ class VoiceService : Service(), TextToSpeech.OnInitListener {
         handler.postDelayed(
             {
 
-                if (isDestroyed()) {
-                    restarting = false
-                    return@postDelayed
-                }
-
                 restarting = false
                 startListening()
 
@@ -246,12 +244,12 @@ class VoiceService : Service(), TextToSpeech.OnInitListener {
                 .trim()
 
         normalized = normalized
-            .replace("गुलशन जी", "gulshan")
-            .replace("गुलशन", "gulshan")
-            .replace("हे गुलशन", "hello gulshan")
+            .replace("हेलो गुलशन जी", "hello gulshan")
             .replace("हेलो गुलशन", "hello gulshan")
             .replace("हैलो गुलशन", "hello gulshan")
-            .replace("हेलो गुलशन जी", "hello gulshan")
+            .replace("हे गुलशन", "hello gulshan")
+            .replace("गुलशन जी", "gulshan")
+            .replace("गुलशन", "gulshan")
             .trim()
 
         if (!normalized.contains("gulshan")) {
@@ -295,11 +293,10 @@ class VoiceService : Service(), TextToSpeech.OnInitListener {
             return
         }
 
-        val intent =
-            Intent(
-                this,
-                MainActivity::class.java
-            )
+        val intent = Intent(
+            this,
+            MainActivity::class.java
+        )
 
         intent.putExtra(
             "background_command",
@@ -492,6 +489,7 @@ class VoiceService : Service(), TextToSpeech.OnInitListener {
 
             tts.setSpeechRate(0.92f)
             tts.setPitch(1.08f)
+
         } else {
 
             ttsReady = false
