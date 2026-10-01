@@ -19,7 +19,9 @@
         android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
 
     <uses-permission
-        android:name="android.permission.POST_NOTIFICATIONS" />    <application
+        android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <application
         android:theme="@style/AppTheme"
         android:label="Gulshan AI"
         android:allowBackup="true"
@@ -27,7 +29,8 @@
 
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:launchMode="singleTop">
 
             <intent-filter>
 
