@@ -49,7 +49,8 @@ class VoiceService : Service(), TextToSpeech.OnInitListener {
     }
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= 26) {
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 
             val channel = NotificationChannel(
                 channelId,
@@ -68,6 +69,7 @@ class VoiceService : Service(), TextToSpeech.OnInitListener {
     }
 
     private fun createNotification(): Notification {
+
         return NotificationCompat.Builder(
             this,
             channelId
@@ -85,17 +87,24 @@ class VoiceService : Service(), TextToSpeech.OnInitListener {
 
     private fun startListening() {
 
-        if (!::handler.isInitialized) return
+        if (!::handler.isInitialized) {
+            return
+        }
 
         handler.post {
 
             if (!SpeechRecognizer.isRecognitionAvailable(this)) {
-                speak("Voice recognition available nahi hai.")
+
+                speak(
+                    "Voice recognition available nahi hai."
+                )
+
                 return@post
             }
 
             try {
 
+                speechRecognizer?.cancel()
                 speechRecognizer?.destroy()
 
                 speechRecognizer =
@@ -185,6 +194,7 @@ class VoiceService : Service(), TextToSpeech.OnInitListener {
                 speechRecognizer?.startListening(intent)
 
             } catch (e: Exception) {
+
                 restartListening()
             }
         }
@@ -192,14 +202,23 @@ class VoiceService : Service(), TextToSpeech.OnInitListener {
 
     private fun restartListening() {
 
-        if (restarting) return
+        if (restarting) {
+            return
+        }
 
         restarting = true
 
         handler.postDelayed(
             {
+
+                if (isDestroyed()) {
+                    restarting = false
+                    return@postDelayed
+                }
+
                 restarting = false
                 startListening()
+
             },
             1200
         )
@@ -226,10 +245,9 @@ class VoiceService : Service(), TextToSpeech.OnInitListener {
                 .replace(Regex("\\s+"), " ")
                 .trim()
 
-        // Hindi wake word को English form में normalize करें
         normalized = normalized
-            .replace("गुलशन", "gulshan")
             .replace("गुलशन जी", "gulshan")
+            .replace("गुलशन", "gulshan")
             .replace("हे गुलशन", "hello gulshan")
             .replace("हेलो गुलशन", "hello gulshan")
             .replace("हैलो गुलशन", "hello gulshan")
@@ -240,37 +258,43 @@ class VoiceService : Service(), TextToSpeech.OnInitListener {
             return
         }
 
-        var command =
+        val command =
             normalized
                 .replace("gulshan", "")
                 .trim()
 
-        // सिर्फ Gulshan / गुलशन
         if (command.isEmpty()) {
+
             lastCommandTime = now
-            speak("Namaste! Main Gulshan hoon.")
+
+            speak(
+                "Namaste! Main Gulshan hoon."
+            )
+
             return
         }
 
-        // hello gulshan
         if (
             command == "hello" ||
             command == "hi" ||
             command == "namaste"
         ) {
+
             lastCommandTime = now
-            speak("Namaste! Main Gulshan hoon.")
+
+            speak(
+                "Namaste! Main Gulshan hoon."
+            )
+
             return
         }
 
         lastCommandTime = now
 
-        // Background में सीधे handle होने वाली commands
         if (handleBackgroundCommand(command)) {
             return
         }
 
-        // बाकी commands MainActivity को भेजें
         val intent =
             Intent(
                 this,
@@ -290,7 +314,9 @@ class VoiceService : Service(), TextToSpeech.OnInitListener {
 
         try {
 
-            speak("Command chala raha hoon.")
+            speak(
+                "Command chala raha hoon."
+            )
 
             startActivity(intent)
 
@@ -309,16 +335,18 @@ class VoiceService : Service(), TextToSpeech.OnInitListener {
         when {
 
             command == "hello" ||
-            command == "hi" ||
-            command.contains("namaste") -> {
+                    command == "hi" ||
+                    command.contains("namaste") -> {
 
-                speak("Namaste! Main Gulshan hoon.")
+                speak(
+                    "Namaste! Main Gulshan hoon."
+                )
+
                 return true
             }
 
             command.contains("battery") ||
-            command.contains("battery status") ||
-            command.contains("बैटरी") -> {
+                    command.contains("बैटरी") -> {
 
                 val batteryManager =
                     getSystemService(BATTERY_SERVICE)
@@ -326,14 +354,18 @@ class VoiceService : Service(), TextToSpeech.OnInitListener {
 
                 val battery =
                     batteryManager.getIntProperty(
-                        android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY
+                        android.os.BatteryManager
+                            .BATTERY_PROPERTY_CAPACITY
                     )
 
                 if (battery >= 0) {
+
                     speak(
                         "Phone ki battery $battery percent hai."
                     )
+
                 } else {
+
                     speak(
                         "Battery status nahi mil saka."
                     )
@@ -343,9 +375,9 @@ class VoiceService : Service(), TextToSpeech.OnInitListener {
             }
 
             command.contains("time") ||
-            command.contains("samay") ||
-            command.contains("समय") ||
-            command.contains("टाइम") -> {
+                    command.contains("samay") ||
+                    command.contains("समय") ||
+                    command.contains("टाइम") -> {
 
                 val time =
                     SimpleDateFormat(
@@ -353,15 +385,17 @@ class VoiceService : Service(), TextToSpeech.OnInitListener {
                         Locale.getDefault()
                     ).format(Date())
 
-                speak("Abhi time $time hai.")
+                speak(
+                    "Abhi time $time hai."
+                )
 
                 return true
             }
 
             command.contains("date") ||
-            command.contains("tarikh") ||
-            command.contains("तारीख") ||
-            command.contains("डेट") -> {
+                    command.contains("tarikh") ||
+                    command.contains("तारीख") ||
+                    command.contains("डेट") -> {
 
                 val date =
                     SimpleDateFormat(
@@ -369,17 +403,17 @@ class VoiceService : Service(), TextToSpeech.OnInitListener {
                         Locale("hi", "IN")
                     ).format(Date())
 
-                speak("Aaj $date hai.")
+                speak(
+                    "Aaj $date hai."
+                )
 
                 return true
             }
 
             command.contains("background voice off") ||
-            command.contains("background voice band") ||
-            command.contains("background voice stop") ||
-            command.contains("बैकग्राउंड वॉइस बंद") -> {
-
-                stopSelf()
+                    command.contains("background voice band") ||
+                    command.contains("background voice stop") ||
+                    command.contains("बैकग्राउंड वॉइस बंद") -> {
 
                 getSharedPreferences(
                     "gulshan",
@@ -392,7 +426,16 @@ class VoiceService : Service(), TextToSpeech.OnInitListener {
                     )
                     .apply()
 
-                speak("Background voice OFF.")
+                speak(
+                    "Background voice OFF."
+                )
+
+                handler.postDelayed(
+                    {
+                        stopSelf()
+                    },
+                    500
+                )
 
                 return true
             }
@@ -405,6 +448,10 @@ class VoiceService : Service(), TextToSpeech.OnInitListener {
 
         if (!ttsReady) {
             return
+        }
+
+        if (tts.isSpeaking) {
+            tts.stop()
         }
 
         tts.speak(
@@ -428,14 +475,26 @@ class VoiceService : Service(), TextToSpeech.OnInitListener {
                 result == TextToSpeech.LANG_MISSING_DATA ||
                 result == TextToSpeech.LANG_NOT_SUPPORTED
             ) {
-                tts.language =
-                    Locale.getDefault()
+
+                val fallback =
+                    tts.setLanguage(
+                        Locale.getDefault()
+                    )
+
+                ttsReady =
+                    fallback != TextToSpeech.LANG_MISSING_DATA &&
+                    fallback != TextToSpeech.LANG_NOT_SUPPORTED
+
+            } else {
+
+                ttsReady = true
             }
 
             tts.setSpeechRate(0.92f)
             tts.setPitch(1.08f)
+        } else {
 
-            ttsReady = true
+            ttsReady = false
         }
     }
 
@@ -450,11 +509,15 @@ class VoiceService : Service(), TextToSpeech.OnInitListener {
 
     override fun onDestroy() {
 
+        restarting = false
+
+        if (::handler.isInitialized) {
+            handler.removeCallbacksAndMessages(null)
+        }
+
         speechRecognizer?.cancel()
         speechRecognizer?.destroy()
         speechRecognizer = null
-
-        handler.removeCallbacksAndMessages(null)
 
         if (::tts.isInitialized) {
             tts.stop()
