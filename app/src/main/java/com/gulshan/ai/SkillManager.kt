@@ -6,10 +6,11 @@ import org.json.JSONObject
 
 class SkillManager(private val context: Context) {
 
-    private val prefs = context.getSharedPreferences(
-        "gulshan_skills",
-        Context.MODE_PRIVATE
-    )
+    private val prefs =
+        context.getSharedPreferences(
+            "gulshan_skills",
+            Context.MODE_PRIVATE
+        )
 
     fun addSkill(
         name: String,
@@ -21,26 +22,47 @@ class SkillManager(private val context: Context) {
         val cleanDescription = description.trim()
         val cleanAction = action.trim()
 
-        if (cleanName.isEmpty() || cleanDescription.isEmpty()) {
+        if (
+            cleanName.isEmpty() ||
+            cleanDescription.isEmpty()
+        ) {
             return false
         }
 
         val skills = getSkillsArray()
 
         val skill = JSONObject()
-        skill.put("name", cleanName)
-        skill.put("description", cleanDescription)
-        skill.put("action", cleanAction)
+
+        skill.put(
+            "name",
+            cleanName
+        )
+
+        skill.put(
+            "description",
+            cleanDescription
+        )
+
+        skill.put(
+            "action",
+            cleanAction
+        )
 
         var updated = false
 
         for (i in 0 until skills.length()) {
-            val oldSkill = skills.optJSONObject(i)
+
+            val oldSkill =
+                skills.optJSONObject(i)
 
             if (
                 oldSkill != null &&
-                oldSkill.optString("name")
-                    .equals(cleanName, ignoreCase = true)
+                oldSkill
+                    .optString("name")
+                    .equals(
+                        cleanName,
+                        ignoreCase = true
+                    )
             ) {
                 skills.put(i, skill)
                 updated = true
@@ -53,6 +75,7 @@ class SkillManager(private val context: Context) {
         }
 
         saveSkills(skills)
+
         return true
     }
 
@@ -69,15 +92,23 @@ class SkillManager(private val context: Context) {
         val skills = getSkillsArray()
 
         for (i in 0 until skills.length()) {
-            val skill = skills.optJSONObject(i)
+
+            val skill =
+                skills.optJSONObject(i)
 
             if (
                 skill != null &&
-                skill.optString("name")
-                    .equals(name.trim(), ignoreCase = true)
+                skill
+                    .optString("name")
+                    .equals(
+                        name.trim(),
+                        ignoreCase = true
+                    )
             ) {
+
                 skills.remove(i)
                 saveSkills(skills)
+
                 return true
             }
         }
@@ -87,11 +118,15 @@ class SkillManager(private val context: Context) {
 
     fun getAllSkills(): List<JSONObject> {
 
-        val result = mutableListOf<JSONObject>()
+        val result =
+            mutableListOf<JSONObject>()
+
         val skills = getSkillsArray()
 
         for (i in 0 until skills.length()) {
-            val skill = skills.optJSONObject(i)
+
+            val skill =
+                skills.optJSONObject(i)
 
             if (skill != null) {
                 result.add(skill)
@@ -102,29 +137,39 @@ class SkillManager(private val context: Context) {
     }
 
     fun clearAllSkills() {
+
         prefs.edit()
             .remove("skills")
             .apply()
     }
 
-    private fun findSkill(name: String): JSONObject? {
+    private fun findSkill(
+        name: String
+    ): JSONObject? {
 
-        val cleanName = name.trim()
+        val cleanName =
+            name.trim()
 
         if (cleanName.isEmpty()) {
             return null
         }
 
-        val skills = getSkillsArray()
+        val skills =
+            getSkillsArray()
 
         for (i in 0 until skills.length()) {
 
-            val skill = skills.optJSONObject(i)
+            val skill =
+                skills.optJSONObject(i)
 
             if (
                 skill != null &&
-                skill.optString("name")
-                    .equals(cleanName, ignoreCase = true)
+                skill
+                    .optString("name")
+                    .equals(
+                        cleanName,
+                        ignoreCase = true
+                    )
             ) {
                 return skill
             }
@@ -135,19 +180,24 @@ class SkillManager(private val context: Context) {
 
     private fun getSkillsArray(): JSONArray {
 
-        val saved = prefs.getString(
-            "skills",
-            "[]"
-        )
+        val saved =
+            prefs.getString(
+                "skills",
+                "[]"
+            )
 
         return try {
             JSONArray(saved)
-        } catch (e: Exception) {
+        } catch (
+            e: Exception
+        ) {
             JSONArray()
         }
     }
 
-    private fun saveSkills(skills: JSONArray) {
+    private fun saveSkills(
+        skills: JSONArray
+    ) {
 
         prefs.edit()
             .putString(
