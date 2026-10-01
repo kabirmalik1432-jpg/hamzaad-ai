@@ -23,7 +23,7 @@ import java.util.Locale
 class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private lateinit var tts: TextToSpeech
-    private var ttsReady: Boolean = false
+    private var ttsReady = false
 
     private lateinit var resultText: TextView
     private lateinit var commandInput: EditText
@@ -51,7 +51,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun handleBackgroundIntent(intent: Intent) {
-
         val command = intent.getStringExtra("background_command")
 
         if (!command.isNullOrBlank()) {
@@ -61,7 +60,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun createInterface() {
-
         val layout = LinearLayout(this)
         layout.orientation = LinearLayout.VERTICAL
         layout.setPadding(30, 40, 30, 30)
@@ -113,7 +111,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         setContentView(layout)
 
         commandButton.setOnClickListener {
-
             val command = commandInput.text.toString().trim()
 
             if (command.isNotEmpty()) {
@@ -146,7 +143,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun executeCommand(command: String) {
-
         val cmd = command
             .lowercase(Locale.getDefault())
             .trim()
@@ -154,11 +150,9 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         showResult("Command: $command")
 
         when {
-
             cmd == "hello gulshan" ||
                     cmd == "hello" ||
                     cmd.contains("हेलो गुलशन") -> {
-
                 speak("Hello. Main Gulshan hoon.")
             }
 
@@ -167,33 +161,28 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                     cmd.contains("background voice band") ||
                     cmd.contains("background voice stop") ||
                     cmd.contains("background band") -> {
-
                 stopVoiceService()
             }
 
             cmd.contains("background voice") ||
                     cmd == "background" -> {
-
                 startVoiceService()
             }
 
             cmd.contains("youtube") ||
                     cmd.contains("यूट्यूब") -> {
-
                 speak("YouTube khol raha hoon.")
                 openYouTube()
             }
 
             cmd.contains("chrome") ||
                     cmd.contains("क्रोम") -> {
-
                 speak("Chrome khol raha hoon.")
                 openChrome()
             }
 
             cmd.contains("camera") ||
                     cmd.contains("कैमरा") -> {
-
                 speak("Camera khol raha hoon.")
                 openCamera()
             }
@@ -201,14 +190,12 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             cmd.contains("settings") ||
                     cmd.contains("setting") ||
                     cmd.contains("सेटिंग") -> {
-
                 speak("Settings khol raha hoon.")
                 openSettings()
             }
 
             cmd.contains("google") ||
                     cmd.contains("गूगल") -> {
-
                 speak("Google khol raha hoon.")
                 openGoogle()
             }
@@ -216,7 +203,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             cmd.contains("time") ||
                     cmd.contains("समय") ||
                     cmd.contains("टाइम") -> {
-
                 val time = SimpleDateFormat(
                     "hh:mm a",
                     Locale.getDefault()
@@ -227,7 +213,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
             cmd.contains("date") ||
                     cmd.contains("तारीख") -> {
-
                 val date = SimpleDateFormat(
                     "dd MMMM yyyy",
                     Locale.getDefault()
@@ -238,57 +223,44 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
             cmd.contains("battery") ||
                     cmd.contains("बैटरी") -> {
-
                 speak(
                     "Battery information phone ki settings se check kar sakte hain."
                 )
-
                 openBatterySettings()
             }
 
             cmd.contains("stop voice") ||
                     cmd.contains("voice band") ||
                     cmd.contains("आवाज़ बंद") -> {
-
                 stopSpeaking()
                 showResult("Voice stopped.")
             }
 
             cmd.contains("clear") ||
                     cmd.contains("साफ") -> {
-
                 commandInput.text.clear()
                 resultText.text = "Gulshan ready hai."
             }
 
             else -> {
-
-                showResult(
-                    "Command not recognized: $command"
-                )
-
-                speak(
-                    "Mujhe ye command abhi samajh nahi aayi."
-                )
+                showResult("Command not recognized: $command")
+                speak("Mujhe ye command abhi samajh nahi aayi.")
             }
         }
     }
 
     private fun startVoiceCommand() {
-
         if (
             ContextCompat.checkSelfPermission(
                 this,
                 Manifest.permission.RECORD_AUDIO
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-
             ActivityCompat.requestPermissions(
                 this,
                 arrayOf(Manifest.permission.RECORD_AUDIO),
                 permissionRequest
             )
-
             return
         }
 
@@ -312,17 +284,12 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         )
 
         try {
-
             startActivityForResult(
                 intent,
                 voiceRequest
             )
-
         } catch (e: Exception) {
-
-            showResult(
-                "Voice recognition available nahi hai."
-            )
+            showResult("Voice recognition available nahi hai.")
         }
     }
 
@@ -332,7 +299,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         resultCode: Int,
         data: Intent?
     ) {
-
         super.onActivityResult(
             requestCode,
             resultCode,
@@ -344,25 +310,21 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             resultCode == RESULT_OK &&
             data != null
         ) {
-
             val results = data.getStringArrayListExtra(
                 RecognizerIntent.EXTRA_RESULTS
             )
 
             if (!results.isNullOrEmpty()) {
-
                 val command = results[0]
 
                 commandInput.setText(command)
-
                 executeCommand(command)
             }
         }
     }
 
     private fun openYouTube() {
-
-        val intent = packageIntent(
+        val intent: Intent? = packageIntent(
             "com.google.android.youtube"
         )
 
@@ -374,8 +336,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun openChrome() {
-
-        val intent = packageIntent(
+        val intent: Intent? = packageIntent(
             "com.android.chrome"
         )
 
@@ -387,31 +348,23 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun openCamera() {
-
         try {
-
             val intent = Intent(
                 android.provider.MediaStore.ACTION_IMAGE_CAPTURE
             )
 
             startActivity(intent)
-
         } catch (e: Exception) {
-
             showResult("Camera open nahi ho saka.")
         }
     }
 
     private fun openSettings() {
-
         try {
-
             startActivity(
                 Intent(Settings.ACTION_SETTINGS)
             )
-
         } catch (e: Exception) {
-
             showResult("Settings open nahi ho saka.")
         }
     }
@@ -421,32 +374,24 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun openBatterySettings() {
-
         try {
-
             startActivity(
                 Intent(Settings.ACTION_BATTERY_SAVER_SETTINGS)
             )
-
         } catch (e: Exception) {
-
             openSettings()
         }
     }
 
     private fun openUrl(url: String) {
-
         try {
-
             val intent = Intent(
                 Intent.ACTION_VIEW,
                 Uri.parse(url)
             )
 
             startActivity(intent)
-
         } catch (e: Exception) {
-
             showResult("Link open nahi ho saka.")
         }
     }
@@ -454,39 +399,31 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun packageIntent(
         packageName: String
     ): Intent? {
-
         return try {
-
             packageManager.getLaunchIntentForPackage(
                 packageName
             )
-
         } catch (e: Exception) {
-
             null
         }
     }
 
     private fun startVoiceService() {
-
         if (
             ContextCompat.checkSelfPermission(
                 this,
                 Manifest.permission.RECORD_AUDIO
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-
             ActivityCompat.requestPermissions(
                 this,
                 arrayOf(Manifest.permission.RECORD_AUDIO),
                 permissionRequest
             )
-
             return
         }
 
         try {
-
             val intent = Intent(
                 this,
                 VoiceService::class.java
@@ -498,26 +435,15 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 startService(intent)
             }
 
-            showResult(
-                "Background voice service started."
-            )
-
-            speak(
-                "Background voice service start kar diya."
-            )
-
+            showResult("Background voice service started.")
+            speak("Background voice service start kar diya.")
         } catch (e: Exception) {
-
-            showResult(
-                "Background service start nahi hua."
-            )
+            showResult("Background service start nahi hua.")
         }
     }
 
     private fun stopVoiceService() {
-
         try {
-
             val intent = Intent(
                 this,
                 VoiceService::class.java
@@ -525,24 +451,14 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
             stopService(intent)
 
-            showResult(
-                "Background voice service stopped."
-            )
-
-            speak(
-                "Background voice service band kar diya."
-            )
-
+            showResult("Background voice service stopped.")
+            speak("Background voice service band kar diya.")
         } catch (e: Exception) {
-
-            showResult(
-                "Background service stop nahi hua."
-            )
+            showResult("Background service stop nahi hua.")
         }
     }
 
     private fun requestPermissionsIfNeeded() {
-
         val permissions = ArrayList<String>()
 
         if (
@@ -580,7 +496,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
 
         if (permissions.isNotEmpty()) {
-
             ActivityCompat.requestPermissions(
                 this,
                 permissions.toTypedArray(),
@@ -594,7 +509,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun speak(message: String) {
-
         if (!ttsReady) {
             showResult(message)
             return
@@ -613,16 +527,13 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun stopSpeaking() {
-
         if (tts.isSpeaking) {
             tts.stop()
         }
     }
 
     override fun onInit(status: Int) {
-
         if (status == TextToSpeech.SUCCESS) {
-
             val result = tts.setLanguage(
                 Locale("hi", "IN")
             )
@@ -630,15 +541,12 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             ttsReady =
                 result != TextToSpeech.LANG_MISSING_DATA &&
                 result != TextToSpeech.LANG_NOT_SUPPORTED
-
         } else {
-
             ttsReady = false
         }
     }
 
     override fun onDestroy() {
-
         if (::tts.isInitialized) {
             tts.stop()
             tts.shutdown()
