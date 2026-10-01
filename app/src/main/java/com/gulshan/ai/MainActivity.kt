@@ -23,7 +23,7 @@ import java.util.Locale
 class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private lateinit var tts: TextToSpeech
-    private var ttsReady = false
+    private var ttsReady: Boolean = false
 
     private lateinit var resultText: TextView
     private lateinit var commandInput: EditText
@@ -38,13 +38,11 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         createInterface()
         requestPermissionsIfNeeded()
-
         handleBackgroundIntent(intent)
     }
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
-
         setIntent(intent)
 
         if (intent != null) {
@@ -54,9 +52,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun handleBackgroundIntent(intent: Intent) {
 
-        val command = intent.getStringExtra(
-            "background_command"
-        )
+        val command = intent.getStringExtra("background_command")
 
         if (!command.isNullOrBlank()) {
             commandInput.setText(command)
@@ -634,6 +630,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             ttsReady =
                 result != TextToSpeech.LANG_MISSING_DATA &&
                 result != TextToSpeech.LANG_NOT_SUPPORTED
+
         } else {
 
             ttsReady = false
