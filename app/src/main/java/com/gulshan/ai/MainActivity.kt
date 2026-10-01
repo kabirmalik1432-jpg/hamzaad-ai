@@ -22,7 +22,7 @@ import java.util.Locale
 
 class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
-    private var tts: TextToSpeech? = null
+    private lateinit var tts: TextToSpeech
     private var ttsReady = false
 
     private lateinit var resultText: TextView
@@ -599,18 +599,16 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun speak(message: String) {
 
-        val engine = tts ?: return
-
         if (!ttsReady) {
             showResult(message)
             return
         }
 
-        if (engine.isSpeaking) {
-            engine.stop()
+        if (tts.isSpeaking) {
+            tts.stop()
         }
 
-        engine.speak(
+        tts.speak(
             message,
             TextToSpeech.QUEUE_FLUSH,
             null,
@@ -620,10 +618,8 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun stopSpeaking() {
 
-        val engine = tts ?: return
-
-        if (engine.isSpeaking) {
-            engine.stop()
+        if (tts.isSpeaking) {
+            tts.stop()
         }
     }
 
@@ -631,23 +627,13 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         if (status == TextToSpeech.SUCCESS) {
 
-            val engine = tts
+            val result = tts.setLanguage(
+                Locale("hi", "IN")
+            )
 
-            if (engine != null) {
-
-                val result = engine.setLanguage(
-                    Locale("hi", "IN")
-                )
-
-                ttsReady =
-                    result != TextToSpeech.LANG_MISSING_DATA &&
-                    result != TextToSpeech.LANG_NOT_SUPPORTED
-
-            } else {
-
-                ttsReady = false
-            }
-
+            ttsReady =
+                result != TextToSpeech.LANG_MISSING_DATA &&
+                result != TextToSpeech.LANG_NOT_SUPPORTED
         } else {
 
             ttsReady = false
@@ -656,14 +642,11 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     override fun onDestroy() {
 
-        val engine = tts
-
-        if (engine != null) {
-            engine.stop()
-            engine.shutdown()
+        if (::tts.isInitialized) {
+            tts.stop()
+            tts.shutdown()
         }
 
-        tts = null
         ttsReady = false
 
         super.onDestroy()
