@@ -23,6 +23,7 @@ import java.util.Locale
 class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private var tts: TextToSpeech? = null
+    private var ttsReady = false
 
     private lateinit var resultText: TextView
     private lateinit var commandInput: EditText
@@ -37,6 +38,30 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         createInterface()
         requestPermissionsIfNeeded()
+
+        handleBackgroundIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+
+        setIntent(intent)
+
+        if (intent != null) {
+            handleBackgroundIntent(intent)
+        }
+    }
+
+    private fun handleBackgroundIntent(intent: Intent) {
+
+        val command = intent.getStringExtra(
+            "background_command"
+        )
+
+        if (!command.isNullOrBlank()) {
+            commandInput.setText(command)
+            executeCommand(command)
+        }
     }
 
     private fun createInterface() {
@@ -92,6 +117,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         setContentView(layout)
 
         commandButton.setOnClickListener {
+
             val command = commandInput.text.toString().trim()
 
             if (command.isNotEmpty()) {
@@ -125,7 +151,9 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun executeCommand(command: String) {
 
-        val cmd = command.lowercase(Locale.getDefault()).trim()
+        val cmd = command
+            .lowercase(Locale.getDefault())
+            .trim()
 
         showResult("Command: $command")
 
@@ -136,6 +164,22 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                     cmd.contains("हेलो गुलशन") -> {
 
                 speak("Hello. Main Gulshan hoon.")
+            }
+
+            // STOP commands ko background start se pehle check karo
+            cmd.contains("voice service band") ||
+                    cmd.contains("background band") ||
+                    cmd.contains("background voice off") ||
+                    cmd.contains("background voice band") ||
+                    cmd.contains("background voice stop") -> {
+
+                stopVoiceService()
+            }
+
+            cmd.contains("background voice") ||
+                    cmd == "background" -> {
+
+                startVoiceService()
             }
 
             cmd.contains("youtube") ||
@@ -200,7 +244,10 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             cmd.contains("battery") ||
                     cmd.contains("बैटरी") -> {
 
-                speak("Battery information phone ki settings se check kar sakte hain.")
+                speak(
+                    "Battery information phone ki settings se check kar sakte hain."
+                )
+
                 openBatterySettings()
             }
 
@@ -208,20 +255,8 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                     cmd.contains("voice band") ||
                     cmd.contains("आवाज़ बंद") -> {
 
-                tts?.stop()
+                stopSpeaking()
                 showResult("Voice stopped.")
-            }
-
-            cmd.contains("background") ||
-                    cmd.contains("background voice") -> {
-
-                startVoiceService()
-            }
-
-            cmd.contains("voice service band") ||
-                    cmd.contains("background band") -> {
-
-                stopVoiceService()
             }
 
             cmd.contains("clear") ||
@@ -233,8 +268,13 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
             else -> {
 
-                speak("Mujhe ye command abhi samajh nahi aayi.")
-                showResult("Command not recognized: $command")
+                showResult(
+                    "Command not recognized: $command"
+                )
+
+                speak(
+                    "Mujhe ye command abhi samajh nahi aayi."
+                )
             }
         }
     }
@@ -268,7 +308,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         intent.putExtra(
             RecognizerIntent.EXTRA_LANGUAGE,
-            Locale.getDefault()
+            Locale.getDefault().toLanguageTag()
         )
 
         intent.putExtra(
@@ -285,7 +325,9 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         } catch (e: Exception) {
 
-            showResult("Voice recognition available nahi hai.")
+            showResult(
+                "Voice recognition available nahi hai."
+            )
         }
     }
 
@@ -330,11 +372,8 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         )
 
         if (intent != null) {
-
             startActivity(intent)
-
         } else {
-
             openUrl("https://www.youtube.com")
         }
     }
@@ -346,11 +385,8 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         )
 
         if (intent != null) {
-
             startActivity(intent)
-
         } else {
-
             openUrl("https://www.google.com")
         }
     }
@@ -429,9 +465,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             packageManager.getLaunchIntentForPackage(
                 packageName
             )
-
         } catch (e: Exception) {
-
             null
         }
     }
@@ -462,11 +496,8 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             )
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-
                 startForegroundService(intent)
-
             } else {
-
                 startService(intent)
             }
 
@@ -523,7 +554,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 Manifest.permission.RECORD_AUDIO
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-
             permissions.add(
                 Manifest.permission.RECORD_AUDIO
             )
@@ -535,7 +565,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 Manifest.permission.CAMERA
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-
             permissions.add(
                 Manifest.permission.CAMERA
             )
@@ -548,7 +577,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 Manifest.permission.POST_NOTIFICATIONS
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-
             permissions.add(
                 Manifest.permission.POST_NOTIFICATIONS
             )
@@ -572,6 +600,11 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         val engine = tts ?: return
 
+        if (!ttsReady) {
+            showResult(message)
+            return
+        }
+
         if (engine.isSpeaking) {
             engine.stop()
         }
@@ -584,22 +617,53 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         )
     }
 
+    private fun stopSpeaking() {
+
+        val engine = tts ?: return
+
+        if (engine.isSpeaking) {
+            engine.stop()
+        }
+    }
+
     override fun onInit(status: Int) {
 
         if (status == TextToSpeech.SUCCESS) {
 
-            tts?.language = Locale(
-                "hi",
-                "IN"
-            )
+            val engine = tts
+
+            if (engine != null) {
+
+                val result = engine.setLanguage(
+                    Locale("hi", "IN")
+                )
+
+                ttsReady =
+                    result != TextToSpeech.LANG_MISSING_DATA &&
+                    result != TextToSpeech.LANG_NOT_SUPPORTED
+
+            } else {
+
+                ttsReady = false
+            }
+
+        } else {
+
+            ttsReady = false
         }
     }
 
     override fun onDestroy() {
 
-        tts?.stop()
-        tts?.shutdown()
+        val engine = tts
+
+        if (engine != null) {
+            engine.stop()
+            engine.shutdown()
+        }
+
         tts = null
+        ttsReady = false
 
         super.onDestroy()
     }
