@@ -166,12 +166,11 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 speak("Hello. Main Gulshan hoon.")
             }
 
-            // STOP commands ko background start se pehle check karo
             cmd.contains("voice service band") ||
-                    cmd.contains("background band") ||
                     cmd.contains("background voice off") ||
                     cmd.contains("background voice band") ||
-                    cmd.contains("background voice stop") -> {
+                    cmd.contains("background voice stop") ||
+                    cmd.contains("background band") -> {
 
                 stopVoiceService()
             }
@@ -465,7 +464,9 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             packageManager.getLaunchIntentForPackage(
                 packageName
             )
+
         } catch (e: Exception) {
+
             null
         }
     }
