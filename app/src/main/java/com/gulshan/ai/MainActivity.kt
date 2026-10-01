@@ -130,6 +130,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         showResult("Command: $command")
 
         when {
+
             cmd == "hello gulshan" ||
                     cmd == "hello" ||
                     cmd.contains("हेलो गुलशन") -> {
@@ -240,7 +241,8 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun startVoiceCommand() {
 
-        if (ContextCompat.checkSelfPermission(
+        if (
+            ContextCompat.checkSelfPermission(
                 this,
                 Manifest.permission.RECORD_AUDIO
             ) != PackageManager.PERMISSION_GRANTED
@@ -384,7 +386,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun openGoogle() {
-
         openUrl("https://www.google.com")
     }
 
@@ -564,7 +565,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun showResult(message: String) {
-
         resultText.text = message
     }
 
